@@ -11,26 +11,34 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Define theme colors
-  final Color primaryColor = const Color(0xFF1e1e2a); // Dark theme primary color
-  final Color secondaryColor = const Color(0xFF7d444f); // Secondary color
-  final Color backgroundColor = const Color(0xFF44404d); // Background color
+  final Color primaryColor = const Color(0xFF416d6d); // Primary color
+  final Color secondaryColor = const Color(0xFF608e8e); // Secondary color
+  final Color backgroundColor = const Color(0xFFc5d0d3); // Background color
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1e1e2a), // Dark background
+        backgroundColor: primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
+        centerTitle: true,
         title: const Text(
           'Lawyer Forum',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white,
+              fontSize: 22,
+              fontWeight:FontWeight.w600,
+              letterSpacing: 0.5),
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20),
+          ),
         ),
       ),
-      backgroundColor: const Color(0xFF1e1e2a),
+      backgroundColor: backgroundColor,
       body: Column(
         children: [
-          // Forum Posts Section
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -71,7 +79,6 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
     );
   }
 
-  // Build Forum Post Widget
   Widget _buildForumPost(DocumentSnapshot post) {
     final data = post.data() as Map<String, dynamic>;
     final comments = List<Map<String, dynamic>>.from(data['comments'] ?? []);
@@ -82,12 +89,11 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF44404d),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: const Color(0xFF44404d)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -96,18 +102,16 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Post Content
           Text(
             data['content'] ?? '',
             style: const TextStyle(
               fontSize: 16,
-              color: Colors.white,
+              color: Color(0xFF416d6d),
             ),
           ),
           const SizedBox(height: 10),
-          const Divider(color: Color(0xFF1e1e2a), thickness: 1),
+          const Divider(color: Color(0xFF416d6d), thickness: 1),
           const SizedBox(height: 8),
-          // Like and Comment Icons
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -117,15 +121,15 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
                   children: [
                     Icon(
                       likes.contains(currentUserId)
-                          ? Icons.thumb_up
-                          : Icons.thumb_up_alt_outlined,
+                          ? Icons.favorite
+                          : Icons.favorite_outline,
                       size: 20,
-                      color: Colors.white,
+                      color: primaryColor,
                     ),
                     const SizedBox(width: 5),
                     Text(
                       '${likes.length}',
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: const TextStyle(color: Color(0xFF416d6d), fontSize: 14),
                     ),
                   ],
                 ),
@@ -137,21 +141,23 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
                     const Icon(
                       Icons.chat_bubble_outline,
                       size: 20,
-                      color: Colors.white,
+                      color: Color(0xFF416d6d),
                     ),
                     const SizedBox(width: 5),
                     Text(
                       '${comments.length}',
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: const TextStyle(color: Color(0xFF416d6d), fontSize: 14),
                     ),
                   ],
                 ),
               ),
-              if (data['userId'] == currentUserId)
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _confirmDeletePost(post.id),
+              IconButton(
+                icon: Icon(
+                  Icons.report_outlined,
+                  color: secondaryColor, // Updated report icon color
                 ),
+                onPressed: () => _showReportDialog(post.id, data['userId']),
+              ),
             ],
           ),
         ],
@@ -159,49 +165,6 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
     );
   }
 
-  // Confirm Delete Post
-  Future<void> _confirmDeletePost(String postId) async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: backgroundColor,
-        title: const Text(
-          'Delete Post',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'Are you sure you want to delete this post?',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: TextStyle(color: secondaryColor)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: secondaryColor),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldDelete == true) {
-      _deletePost(postId);
-    }
-  }
-
-  // Delete Post
-  Future<void> _deletePost(String postId) async {
-    try {
-      await FirebaseFirestore.instance.collection('forums').doc(postId).delete();
-    } catch (e) {
-      print("Error deleting post: $e");
-    }
-  }
-
-  // Toggle Like
   Future<void> _toggleLike(
       String postId, List<String> likes, String currentUserId) async {
     try {
@@ -221,7 +184,6 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
     }
   }
 
-  // Show Comments Page
   void _showCommentsPage(String postId) {
     Navigator.push(
       context,
@@ -230,29 +192,113 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
       ),
     );
   }
-}
 
+  void _showReportDialog(String postId, String reportedUserId) {
+    final TextEditingController _reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            "Report Post",
+            style: TextStyle(color: Color(0xFF416d6d)),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Provide a reason for reporting this post.",
+                style: TextStyle(color: Color(0xFF416d6d)),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _reasonController,
+                decoration: const InputDecoration(
+                  labelText: "Reason",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel", style: TextStyle(color: Color(0xFF416d6d))),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final reason = _reasonController.text.trim();
+                if (reason.isNotEmpty) {
+                  await _submitReport(postId, reportedUserId, reason);
+                  Navigator.pop(context);
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
+              child: const Text("Submit", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _submitReport(
+      String postId, String reportedUserId, String reason) async {
+    try {
+      await FirebaseFirestore.instance.collection('forumreports').add({
+        'postId': postId,
+        'reportedUserId': reportedUserId,
+        'reason': reason,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Report submitted successfully."),
+          backgroundColor: primaryColor,
+        ),
+      );
+    } catch (e) {
+      print("Error submitting report: $e");
+    }
+  }
+}
 class CommentsPage extends StatelessWidget {
   final String postId;
 
   CommentsPage({required this.postId});
 
+  final Color primaryColor = const Color(0xFF416d6d);
+  final Color secondaryColor = const Color(0xFF608e8e);
+  final Color backgroundColor = const Color(0xFFc5d0d3);
+
   @override
   Widget build(BuildContext context) {
     final TextEditingController _commentController = TextEditingController();
-    final FirebaseAuth _auth = FirebaseAuth.instance;
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1e1e2a),
+        backgroundColor: primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
+        centerTitle: true,
         title: const Text(
           'Comments',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+
+          ),
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20),
+          ),
         ),
       ),
-      backgroundColor: const Color(0xFF1e1e2a),
+      backgroundColor: backgroundColor,
       body: Column(
         children: [
           Expanded(
@@ -271,84 +317,136 @@ class CommentsPage extends StatelessWidget {
                 final comments = List<Map<String, dynamic>>.from(
                     snapshot.data!['comments'] ?? []);
 
-                return ListView.builder(
-                  itemCount: comments.length,
-                  itemBuilder: (context, index) {
-                    final comment = comments[index];
-                    return _buildCommentCard(comment);
+                if (comments.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 80,
+                          color: primaryColor.withOpacity(0.3),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No comments yet',
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          'Be the first to start the conversation!',
+                          style: TextStyle(
+                            color: secondaryColor,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _enrichCommentsWithProfilePhoto(comments),
+                  builder: (context, enrichedSnapshot) {
+                    if (!enrichedSnapshot.hasData) {
+                      return Center(
+                        child: CircularProgressIndicator(color: primaryColor),
+                      );
+                    }
+
+                    final enrichedComments = enrichedSnapshot.data!;
+
+                    return ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: enrichedComments.length,
+                      separatorBuilder: (context, index) => Divider(
+                        color: Colors.grey.shade300,
+                        height: 16,
+                      ),
+                      itemBuilder: (context, index) {
+                        final comment = enrichedComments[index];
+                        return _buildCommentCard(comment, postId, context); // Pass context here
+                      },
+                    );
+
                   },
                 );
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
+          // Comment Input Section
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: TextFormField(
                     controller: _commentController,
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: primaryColor),
                     decoration: InputDecoration(
                       hintText: 'Write a comment...',
-                      hintStyle: const TextStyle(color: Color(0xFF7b7794)),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide:
-                        const BorderSide(color: Color(0xFF44404d)),
+                      hintStyle: TextStyle(
+                        color: secondaryColor.withOpacity(0.7),
+                        fontSize: 14,
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide:
-                        const BorderSide(color: Color(0xFF44404d)),
+                      filled: true,
+                      fillColor: backgroundColor.withOpacity(0.2),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 12),
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () async {
-                    final user = _auth.currentUser;
-
-                    if (user == null) return;
-
-                    final lawyerDoc = await FirebaseFirestore.instance
-                        .collection('lawyer')
-                        .doc(user.uid)
-                        .get();
-
-                    final name = lawyerDoc.exists
-                        ? lawyerDoc['name'] ?? 'Lawyer'
-                        : 'Lawyer';
-
-                    final newComment = {
-                      'userName': name,
-                      'userType': 'Lawyer',
-                      'comment': _commentController.text.trim(),
-                      'userId': user.uid,
-                    };
-
-                    if (_commentController.text.trim().isNotEmpty) {
-                      _commentController.clear();
-                      await FirebaseFirestore.instance
-                          .collection('forums')
-                          .doc(postId)
-                          .update({
-                        'comments': FieldValue.arrayUnion([newComment]),
-                      });
-                    }
-                  },
-                  child: const Text(
-                    'Comment',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF44404d),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                const SizedBox(width: 12),
+                CircleAvatar(
+                  backgroundColor: primaryColor,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.send,
+                      color: Colors.white,
+                      size: 20,
                     ),
+                    onPressed: () async {
+                      if (_commentController.text.trim().isNotEmpty) {
+                        final currentUser = FirebaseAuth.instance.currentUser;
+
+                        if (currentUser != null) {
+                          final newComment = {
+                            'userName': currentUser.displayName ?? 'Anonymous',
+                            'userType': 'User',
+                            'comment': _commentController.text.trim(),
+                            'userId': currentUser.uid,
+                          };
+
+                          await FirebaseFirestore.instance
+                              .collection('forums')
+                              .doc(postId)
+                              .update({
+                            'comments': FieldValue.arrayUnion([newComment]),
+                          });
+
+                          _commentController.clear();
+                        }
+                      }
+                    },
                   ),
                 ),
               ],
@@ -359,49 +457,127 @@ class CommentsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCommentCard(Map<String, dynamic> comment) {
+  Widget _buildCommentCard(Map<String, dynamic> comment, String postId, BuildContext context) {
+    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
       padding: const EdgeInsets.all(12.0),
       decoration: BoxDecoration(
-        color: const Color(0xFF44404d),
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(color: const Color(0xFF44404d)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                comment['userName'] ?? 'Anonymous',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              if (comment['userId'] == FirebaseAuth.instance.currentUser!.uid)
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () async {
-                    await FirebaseFirestore.instance
-                        .collection('forums')
-                        .doc(postId)
-                        .update({
-                      'comments': FieldValue.arrayRemove([comment]),
-                    });
-                  },
-                ),
-            ],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
-          const SizedBox(height: 4),
-          Text(
-            comment['comment'] ?? '',
-            style: const TextStyle(color: Colors.white),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: backgroundColor,
+            backgroundImage: (comment['userType'] == 'Lawyer' &&
+                comment.containsKey('profilePhotoUrl') &&
+                comment['profilePhotoUrl'] != null)
+                ? NetworkImage(comment['profilePhotoUrl'])
+                : null,
+            child: (comment['userType'] != 'Lawyer' ||
+                comment['profilePhotoUrl'] == null)
+                ? Icon(Icons.person, color: primaryColor)
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      comment['userName'] ?? 'Anonymous',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF414d6d),
+                      ),
+                    ),
+                    if (comment['userId'] == currentUserId)
+                      IconButton(
+                        icon: Icon(Icons.delete_outline, color:secondaryColor),
+                        onPressed: () => _confirmDeleteComment(context, postId, comment),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  comment['comment'] ?? '',
+                  style: const TextStyle(color: Color(0xFF414d6d)),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
+  }
+
+
+  Future<List<Map<String, dynamic>>> _enrichCommentsWithProfilePhoto(
+      List<Map<String, dynamic>> comments) async {
+    final lawyersRef = FirebaseFirestore.instance.collection('lawyer');
+
+    for (var comment in comments) {
+      if (comment['userType'] == 'Lawyer') {
+        try {
+          final lawyerDoc = await lawyersRef.doc(comment['userId']).get();
+          if (lawyerDoc.exists) {
+            comment['profilePhotoUrl'] = lawyerDoc['profilephotourl'] ?? '';
+          }
+        } catch (e) {
+          print('Error fetching lawyer profile: $e');
+        }
+      }
+    }
+    return comments;
+  }
+
+  void _confirmDeleteComment(
+      BuildContext context, String postId, Map<String, dynamic> comment) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Delete Comment',
+          style: TextStyle(
+            color: primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: const Text('Are you sure you want to delete this comment?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancel', style: TextStyle(color: primaryColor)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete == true) {
+      await FirebaseFirestore.instance
+          .collection('forums')
+          .doc(postId)
+          .update({
+        'comments': FieldValue.arrayRemove([comment]),
+      });
+    }
   }
 }

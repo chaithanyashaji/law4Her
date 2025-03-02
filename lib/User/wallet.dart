@@ -241,7 +241,7 @@ class _WalletPageState extends State<WalletPage> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF44404d),
+                          color: Color(0xFF416d6d),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -288,12 +288,12 @@ class _WalletPageState extends State<WalletPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         "Transaction History",
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF44404d),
+                          color: Color(0xFF416d6d),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -301,66 +301,104 @@ class _WalletPageState extends State<WalletPage> {
                         stream: _transactionsStream,
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
+                            return Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF416d6d)),
+                              ),
                             );
                           }
                           if (snapshot.hasError) {
                             return Center(
                               child: Text(
                                 "Error: ${snapshot.error}",
-                                style: TextStyle(color: Colors.red),
+                                style: TextStyle(color: Color(0xFF608e8e)),
                               ),
                             );
                           }
                           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                            return const Text(
-                              "No transactions yet.",
-                              style: TextStyle(color: Color(0xFF44404d)),
+                            return Center(
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.receipt_long,
+                                    size: 60,
+                                    color: Color(0xFF416d6d).withOpacity(0.5),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    "No transactions yet.",
+                                    style: TextStyle(
+                                      color: Color(0xFF416d6d),
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             );
                           }
 
                           final transactions = snapshot.data!.docs;
 
-                          return ListView.separated(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: transactions.length,
-                            separatorBuilder: (context, index) => const Divider(),
-                            itemBuilder: (context, index) {
-                              final transaction =
-                              transactions[index].data() as Map<String, dynamic>;
-                              final amount = transaction['amount'] ?? 0;
-                              final status = transaction['status'] ?? 'Unknown';
-                              final timestamp =
-                                  transaction['timestamp']?.toDate() ?? DateTime.now();
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Color(0xFF608e8e).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: transactions.length,
+                              separatorBuilder: (context, index) => Divider(
+                                color: Color(0xFF416d6d).withOpacity(0.2),
+                                indent: 16,
+                                endIndent: 16,
+                              ),
+                              itemBuilder: (context, index) {
+                                final transaction = transactions[index].data() as Map<String, dynamic>;
+                                final amount = transaction['amount'] ?? 0;
+                                final status = transaction['status'] ?? 'Unknown';
+                                final timestamp = transaction['timestamp']?.toDate() ?? DateTime.now();
 
-                              return ListTile(
-                                title: Text(
-                                  "₹$amount",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF44404d),
+                                return ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  title: Text(
+                                    "₹$amount",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF416d6d),
+                                      fontSize: 18,
+                                    ),
                                   ),
-                                ),
-                                subtitle: Text(
-                                  "${timestamp.day}/${timestamp.month}/${timestamp.year} - $status",
-                                  style: const TextStyle(color: Colors.grey),
-                                ),
-                                trailing: Icon(
-                                  status == 'Success'
-                                      ? Icons.check_circle
-                                      : Icons.error,
-                                  color: status == 'Success' ? Colors.green : Colors.red,
-                                ),
-                              );
-                            },
+                                  subtitle: Text(
+                                    "${timestamp.day}/${timestamp.month}/${timestamp.year} - $status",
+                                    style: TextStyle(
+                                      color: Color(0xFF416d6d).withOpacity(0.7),
+                                    ),
+                                  ),
+                                  trailing: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: status == 'Success'
+                                          ? Colors.green.withOpacity(0.1)
+                                          : Colors.red.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(
+                                      status == 'Success'
+                                          ? Icons.check_circle
+                                          : Icons.error,
+                                      color: status == 'Success' ? Colors.green : Colors.red,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           );
                         },
                       ),
                     ],
                   ),
-                ),
+                )
 
               ],
             ),

@@ -290,12 +290,15 @@ class _ChatWithLawyerState extends State<ChatWithLawyer> {
         }
 
         final serviceType = lawyerDoc['serviceType'] ?? 'Paid Service';
-        final rate = lawyerDoc['rate'] ?? 10; // Default rate if not specified
+        // Default rate if not specified
 
         if (serviceType == 'Free Service') {
           debugPrint("No deduction for free service.");
           return; // Skip deduction for free services
         }
+
+        // Access the rate only if the service is Paid
+        final rate = lawyerDoc['rate'] ?? 10; // Default rate if not specified
 
         // Check wallet balance
         if (walletBalance < rate) {
@@ -920,4 +923,3 @@ class EncryptedIndicator extends StatelessWidget {
     );
   }
 }
-

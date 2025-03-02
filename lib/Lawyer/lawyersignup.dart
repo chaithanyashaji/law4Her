@@ -26,6 +26,9 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
   final _barIdController = TextEditingController();
   final _specializationController = TextEditingController();
   final _placeController = TextEditingController();
+  final _experienceController = TextEditingController(); // New Controller for experience
+  final _rateController = TextEditingController(); // New Controller for Rate
+
 
   String? _selectedServiceType;
   File? _idProofImage;
@@ -63,6 +66,7 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
     _barIdController.dispose();
     _specializationController.dispose();
     _placeController.dispose();
+    _experienceController.dispose();
     super.dispose();
   }
 
@@ -171,67 +175,89 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
   }
 
   Widget _buildServiceTypeDropdown() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFC5D0D3),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFC5D0D3).withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: DropdownButtonFormField<String>(
-        value: _selectedServiceType,
-        decoration: InputDecoration(
-          labelText: "Service Type",
-          labelStyle: const TextStyle(color: Color(0xFF608e8e)),
-          prefixIcon: Icon(Icons.work_outline, color: const Color(0xFF608e8e)),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          fillColor: const Color(0xFFC5D0D3),
-          filled: true,
-          enabledBorder: OutlineInputBorder(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFC5D0D3),
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF416d6d)),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFC5D0D3).withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF416d6d), width: 1.5),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.red),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.red, width: 1.5),
-          ),
-        ),
-        style: const TextStyle(color: Color(0xFF416d6d)),
-        dropdownColor: const Color(0xFFC5D0D3),
-        icon: Icon(Icons.arrow_drop_down, color: const Color(0xFF608e8e)),
-        items: ['Free Service', 'Paid Service'].map((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: Color(0xFF416d6d),
-                fontSize: 14,
+          child: DropdownButtonFormField<String>(
+            value: _selectedServiceType,
+            decoration: InputDecoration(
+              labelText: "Service Type",
+              labelStyle: const TextStyle(color: Color(0xFF608e8e)),
+              prefixIcon: Icon(Icons.work_outline, color: const Color(0xFF608e8e)),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              fillColor: const Color(0xFFC5D0D3),
+              filled: true,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF416d6d)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF416d6d), width: 1.5),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.red),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.red, width: 1.5),
               ),
             ),
-          );
-        }).toList(),
-        onChanged: (value) {
-          setState(() => _selectedServiceType = value);
-        },
-        validator: (value) => value == null ? 'Please select a service type' : null,
-      ),
+            style: const TextStyle(color: Color(0xFF416d6d)),
+            dropdownColor: const Color(0xFFC5D0D3),
+            icon: Icon(Icons.arrow_drop_down, color: const Color(0xFF608e8e)),
+            items: ['Free Service', 'Paid Service'].map((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    color: Color(0xFF416d6d),
+                    fontSize: 14,
+                  ),
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() => _selectedServiceType = value);
+            },
+            validator: (value) => value == null ? 'Please select a service type' : null,
+          ),
+        ),
+        if (_selectedServiceType == 'Paid Service') ...[
+          const SizedBox(height: 20),
+          _buildTextField(
+            controller: _rateController,
+            label: "Rate Amount",
+            icon: Icons.attach_money_outlined,
+            isNumeric: true,
+            validator: (value) {
+              if (_selectedServiceType == 'Paid Service' &&
+                  (value == null || value.isEmpty || int.tryParse(value) == null || int.parse(value) <= 0)) {
+                return "Please enter a valid rate amount";
+              }
+              return null;
+            },
+          ),
+        ],
+      ],
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -352,6 +378,23 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
                             label: "Place",
                             icon: Icons.location_on_outlined,
                             validator: (value) => value?.isEmpty ?? true ? "Please enter your place" : null,
+                          ),
+                          const Gap(20),
+                          _buildTextField(
+                            controller: _experienceController,
+                            label: "Experience (Years)", // Label for experience
+                            icon: Icons.history_edu_outlined,
+                            isNumeric: true,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Please enter your experience in years";
+                              }
+                              if (int.tryParse(value) == null ||
+                                  int.parse(value) < 0) {
+                                return "Please enter a valid number";
+                              }
+                              return null;
+                            },
                           ),
                           const Gap(20),
                           _buildImagePickerButton(true),
@@ -542,8 +585,10 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
       );
 
       final userId = userCredential.user!.uid;
-      final idProofUrl = await _uploadFile(_compressedIdProofBytes!, 'lawyer_id_proofs/$userId.jpg');
-      final profilePhotoUrl = await _uploadFile(_compressedProfilePhotoBytes!, 'lawyer_profile_photos/$userId.jpg');
+      final idProofUrl =
+      await _uploadFile(_compressedIdProofBytes!, 'lawyer_id_proofs/$userId.jpg');
+      final profilePhotoUrl = await _uploadFile(
+          _compressedProfilePhotoBytes!, 'lawyer_profile_photos/$userId.jpg');
 
       await FirebaseFirestore.instance.collection('lawyer').doc(userId).set({
         'name': _nameController.text.trim(),
@@ -552,6 +597,7 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
         'barid': _barIdController.text.trim(),
         'specialization': _specializationController.text.trim(),
         'place': _placeController.text.trim(),
+        'experience': int.parse(_experienceController.text.trim()),
         'idproofurl': idProofUrl,
         'profilephotourl': profilePhotoUrl,
         'status': 'Pending',
@@ -559,8 +605,12 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
         'noOfRatings': 0,
         'avgRating': 0.0,
         'serviceType': _selectedServiceType,
-        'availability': 'no',
+        'availability': false, // Initialize availability as false
+        'earnings': 0, // Initialize earnings to 0
+        if (_selectedServiceType == 'Paid Service') 'rate': int.parse(_rateController.text.trim()), // Save rate for Paid Service
       });
+
+
 
       _showVerificationDialog();
     } on FirebaseAuthException catch (e) {
@@ -576,7 +626,13 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
     } finally {
       setState(() => _isLoading = false);
     }
+    if (_selectedServiceType == 'Paid Service' && (_rateController.text.isEmpty || int.tryParse(_rateController.text) == null)) {
+      setState(() => _errorText = 'Please enter a valid rate amount for Paid Service.');
+      return;
+    }
   }
+
+
 
   Future<String> _uploadFile(Uint8List fileBytes, String filePath) async {
     final storageRef = FirebaseStorage.instance.ref().child(filePath);

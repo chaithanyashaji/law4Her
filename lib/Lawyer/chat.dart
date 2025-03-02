@@ -39,7 +39,7 @@ class _ChatWithUserState extends State<ChatWithUser> {
     _initializeEncryption();
     _initializeTimer();
     _listenForDeliveredMessages();
-     // Ensure messages are marked as read when the chat is opened
+    // Ensure messages are marked as read when the chat is opened
   }
 
   @override

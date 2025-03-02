@@ -77,7 +77,7 @@ class _LawyerloginState extends State<Lawyerlogin> with SingleTickerProviderStat
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: SizedBox(
-                height: MediaQuery.of(context).size.height,
+                  height: MediaQuery.of(context).size.height,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: FadeTransition(

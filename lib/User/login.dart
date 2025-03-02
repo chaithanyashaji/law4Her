@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:law4her/User/homepage.dart';
-import 'package:law4her/admin/verifylawyer.dart';
+import 'package:law4her/admin/adminhome.dart';
 import 'package:law4her/services/auth_service.dart';
 import 'package:law4her/User/signup.dart';
 import 'package:law4her/User/forgetpassword.dart';
@@ -78,10 +78,10 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
 
           // Main content
           SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height,
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height,
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: FadeTransition(
@@ -477,7 +477,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
           // Redirect admin to Admin Dashboard
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => Verifylawyer()),
+            MaterialPageRoute(builder: (context) => AdminHomePage()),
           );
         } else if (role == 'user') {
           // Redirect user to Home Page
@@ -522,3 +522,4 @@ String _handleFirebaseAuthError(FirebaseAuthException e) {
       return e.message ?? 'Login failed. Please try again.';
   }
 }
+

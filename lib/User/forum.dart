@@ -11,15 +11,635 @@ class _ForumPageState extends State<ForumPage> {
   final TextEditingController _postController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Define theme colors
+  // Keep existing color theme
   final Color primaryColor = const Color(0xFF416d6d);
   final Color secondaryColor = const Color(0xFF608e8e);
   final Color backgroundColor = const Color(0xFFc5d0d3);
 
+
+  Future<void> _sendReport(String postId, String reportedUserId, String reason) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please log in to report.'),
+          backgroundColor: primaryColor,
+        ),
+      );
+      return;
+    }
+
+    try {
+      await FirebaseFirestore.instance.collection('forumreports').add({
+        'reporterId': currentUser.uid, // The user reporting the post
+        'reportedUserId': reportedUserId, // The owner of the forum post being reported
+        'postId': postId, // ID of the reported forum post
+        'reason': reason, // Reason for reporting
+        'status': 'pending', // Default status of the report
+        'timestamp': FieldValue.serverTimestamp(), // Time of report submission
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Report submitted successfully.'),
+          backgroundColor: primaryColor,
+        ),
+      );
+    } catch (e) {
+      print('Error submitting report: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Failed to submit report. Please try again.'),
+          backgroundColor: primaryColor,
+        ),
+      );
+    }
+  }
+
+
+
+  // Standardized styles
+  final cardDecoration = BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(16),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.06),
+        blurRadius: 10,
+        offset: const Offset(0, 4),
+      ),
+    ],
+  );
+
   @override
-  void dispose() {
-    _postController.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: primaryColor,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Forum',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20),
+          ),
+        ),
+      ),
+      backgroundColor: backgroundColor,
+      body: Column(
+        children: [
+          _buildPostComposer(),
+          Expanded(child: _buildPostsList()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPostComposer() {
+    return Container(
+      margin: const EdgeInsets.only(top: 26,bottom: 26,left: 16,right: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: cardDecoration.copyWith(
+        color: Colors.white.withOpacity(0.95),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Create Post',
+            style: TextStyle(
+              color: primaryColor,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _postController,
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontSize: 16,
+                    height: 1.5,
+                  ),
+                  maxLines: 1,
+                  decoration: InputDecoration(
+                    hintText: 'Share your thoughts...',
+                    hintStyle: TextStyle(
+                      color: secondaryColor.withOpacity(0.7),
+                      fontSize: 16,
+                    ),
+                    filled: true,
+                    fillColor: backgroundColor.withOpacity(0.2),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.all(16),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8), // Space between the TextFormField and button
+              ElevatedButton(
+                onPressed: _addPost,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.send_rounded, size: 18),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Post',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildPostsList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('forums')
+          .orderBy('timestamp', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(
+            child: CircularProgressIndicator(
+              color: primaryColor,
+              strokeWidth: 3,
+            ),
+          );
+        }
+
+        final posts = snapshot.data!.docs;
+
+        if (posts.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.forum_outlined,
+                  size: 64,
+                  color: primaryColor.withOpacity(0.5),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "No posts yet. Start the conversation!",
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          itemCount: posts.length,
+          itemBuilder: (context, index) => _buildForumPost(posts[index]),
+        );
+      },
+    );
+  }
+
+  Widget _buildForumPost(DocumentSnapshot post) {
+    final data = post.data() as Map<String, dynamic>;
+    final comments = List<Map<String, dynamic>>.from(data['comments'] ?? []);
+    final likes = List<String>.from(data['likes'] ?? []);
+    final currentUserId = _auth.currentUser!.uid;
+    final isLiked = likes.contains(currentUserId);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                Text(
+                  data['content'] ?? '',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: primaryColor.withOpacity(0.9),
+                    height: 1.5,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Line partition between content and action buttons
+          Divider(
+            thickness: 1,
+            height: 1,
+            color: secondaryColor.withOpacity(0.4),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: backgroundColor.withOpacity(0.1),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(16),
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildActionButton(
+                  onTap: () => _toggleLike(post.id, likes, currentUserId),
+                  icon: isLiked ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
+                  count: likes.length,
+                  active: isLiked,
+                ),
+                _buildActionButton(
+                  onTap: () => _showCommentsPage(post.id),
+                  icon: Icons.chat_bubble_outline_rounded,
+                  count: comments.length,
+                  active: false,
+                ),
+                if (data['userId'] == currentUserId)
+                  IconButton(
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      color: secondaryColor.withOpacity(0.7),
+                    ),
+                    onPressed: () => _confirmDeletePost(post.id),
+                  ),
+                // Report button
+                IconButton(
+                  icon: Icon(
+                    Icons.report_outlined,
+                    color: secondaryColor.withOpacity(0.7),
+                  ),
+                  onPressed: () => _showReportDialog(
+                    post.id, // The ID of the forum post being reported
+                    data['userId'], // The ID of the user whose post is being reported
+                    data['userName'] ?? 'User', // The name of the user whose post is being reported // The name of the user whose post is being reported
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReportDialog(String postId, String reportedUserId, String reportedUserName) {
+    final TextEditingController _reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Report Post",style: TextStyle(color: primaryColor),),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              TextField(
+                controller: _reasonController,
+                decoration: const InputDecoration(
+                  labelText: "Reason for reporting",
+                  hintText: "Enter your reason...",
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final reason = _reasonController.text.trim();
+                if (reason.isNotEmpty) {
+                  _sendReport(postId, reportedUserId, reason); // Pass all three arguments
+                  Navigator.pop(context);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Please provide a reason for reporting.'),
+                      backgroundColor: primaryColor,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text("Submit"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+
+
+
+
+
+  void _showCommentsPage(String postId) {
+    final TextEditingController _commentController = TextEditingController();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            backgroundColor: primaryColor,
+            elevation: 0,
+            centerTitle: true,
+            title: Text(
+              'Comments',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(20),
+              ),
+            ),
+          ),
+          backgroundColor: backgroundColor,
+          body: Column(
+            children: [
+              Expanded(
+                child: StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('forums')
+                      .doc(postId)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return Center(
+                        child: CircularProgressIndicator(color: primaryColor),
+                      );
+                    }
+
+                    final comments = List<Map<String, dynamic>>.from(
+                        snapshot.data!['comments'] ?? []);
+
+                    if (comments.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.chat_bubble_outline,
+                              size: 80,
+                              color: primaryColor.withOpacity(0.3),
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'No comments yet',
+                              style: TextStyle(
+                                color: primaryColor,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              'Be the first to start the conversation!',
+                              style: TextStyle(
+                                color: secondaryColor,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return FutureBuilder<List<Map<String, dynamic>>>(
+                      future: _enrichCommentsWithProfilePhoto(comments),
+                      builder: (context, enrichedSnapshot) {
+                        if (!enrichedSnapshot.hasData) {
+                          return Center(
+                            child: CircularProgressIndicator(color: primaryColor),
+                          );
+                        }
+
+                        final enrichedComments = enrichedSnapshot.data!;
+
+                        return ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: enrichedComments.length,
+                          separatorBuilder: (context, index) => Divider(
+                            color: Colors.grey.shade300,
+                            height: 16,
+                          ),
+                          itemBuilder: (context, index) {
+                            final comment = enrichedComments[index];
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 24,
+                                    backgroundColor: backgroundColor,
+                                    backgroundImage: (comment['userType'] == 'Lawyer' &&
+                                        comment['profilephotourl'] != null &&
+                                        comment['profilephotourl'].isNotEmpty)
+                                        ? NetworkImage(comment['profilephotourl'])
+                                        : null,
+                                    child: (comment['userType'] != 'Lawyer' ||
+                                        comment['profilephotourl'] == null ||
+                                        comment['profilephotourl'].isEmpty)
+                                        ? Icon(
+                                      Icons.person,
+                                      color: primaryColor,
+                                      size: 24,
+                                    )
+                                        : null,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              comment['userType'] == 'Lawyer'
+                                                  ? comment['userName'] ?? 'Lawyer'
+                                                  : 'Anonymous',
+                                              style: TextStyle(
+                                                color: primaryColor,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            if (comment['userId'] == _auth.currentUser!.uid)
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.delete_outline,
+                                                  color: secondaryColor,
+                                                  size: 20,
+                                                ),
+                                                onPressed: () => _confirmDeleteComment(postId, comment),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          comment['comment'] ?? '',
+                                          style: TextStyle(
+                                            color: primaryColor.withOpacity(0.8),
+                                            fontSize: 14,
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _commentController,
+                        style: TextStyle(color: primaryColor),
+                        decoration: InputDecoration(
+                          hintText: 'Write a comment...',
+                          hintStyle: TextStyle(
+                            color: secondaryColor.withOpacity(0.7),
+                            fontSize: 14,
+                          ),
+                          filled: true,
+                          fillColor: backgroundColor,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    CircleAvatar(
+                      backgroundColor: primaryColor,
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.send,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: () async {
+                          if (_commentController.text.trim().isNotEmpty) {
+                            final newComment = {
+                              'userType': 'Anonymous',
+                              'comment': _commentController.text.trim(),
+                              'userId': _auth.currentUser!.uid,
+                            };
+                            await _addComment(postId, newComment);
+                            _commentController.clear();
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _addPost() async {
@@ -106,7 +726,7 @@ class _ForumPageState extends State<ForumPage> {
             title: Text(
               'Delete Post',
               style: TextStyle(
-                  color: primaryColor, fontWeight: FontWeight.bold),
+                  color: secondaryColor, fontWeight: FontWeight.bold),
             ),
             content: Text(
               'Are you sure you want to delete this post?',
@@ -125,7 +745,7 @@ class _ForumPageState extends State<ForumPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: secondaryColor,
                 ),
-                child: Text('Delete'),
+                child: Text('Delete',style: TextStyle(color: Color(0XFFC5D0D3)),),
               ),
             ],
           ),
@@ -165,7 +785,7 @@ class _ForumPageState extends State<ForumPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: secondaryColor,
                 ),
-                child: Text('Delete'),
+                child: Text('Delete',style: TextStyle(color: Color(0XFFc5d0d3)),),
               ),
             ],
           ),
@@ -175,7 +795,6 @@ class _ForumPageState extends State<ForumPage> {
       _deleteComment(postId, comment);
     }
   }
-
 
   Widget _buildActionButton({
     required VoidCallback onTap,
@@ -205,437 +824,6 @@ class _ForumPageState extends State<ForumPage> {
       ),
     );
   }
-
-  Widget _buildForumPost(DocumentSnapshot post) {
-    final data = post.data() as Map<String, dynamic>;
-    final comments = List<Map<String, dynamic>>.from(data['comments'] ?? []);
-    final likes = List<String>.from(data['likes'] ?? []);
-    final currentUserId = _auth.currentUser!.uid;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              data['content'] ?? '',
-              style: TextStyle(
-                fontSize: 16,
-                color: primaryColor,
-                height: 1.5,
-              ),
-            ),
-          ),
-          Divider(height: 1, color: backgroundColor),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildActionButton(
-                  onTap: () => _toggleLike(post.id, likes, currentUserId),
-                  icon: likes.contains(currentUserId)
-                      ? Icons.favorite
-                      : Icons.favorite_border,
-                  count: likes.length,
-                  active: likes.contains(currentUserId),
-                ),
-                _buildActionButton(
-                  onTap: () => _showCommentsPage(post.id),
-                  icon: Icons.chat_bubble_outline,
-                  count: comments.length,
-                  active: false,
-                ),
-                if (data['userId'] == currentUserId)
-                  IconButton(
-                    icon: Icon(Icons.delete_outline,
-                        color: secondaryColor.withOpacity(0.7)),
-                    onPressed: () => _confirmDeletePost(post.id),
-
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        elevation: 2,
-        centerTitle: true,
-        title: Text(
-          'Forum',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      backgroundColor: backgroundColor,
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _postController,
-                    style: TextStyle(color: primaryColor),
-                    maxLines: null,
-                    decoration: InputDecoration(
-                      hintText: 'Share your thoughts...',
-                      hintStyle: TextStyle(
-                          color: secondaryColor.withOpacity(0.7)),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.3),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: _addPost,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 2,
-                  ),
-                  child: const Text(
-                    'Post',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('forums')
-                  .orderBy('timestamp', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return Center(
-                    child: CircularProgressIndicator(color: primaryColor),
-                  );
-                }
-
-                final posts = snapshot.data!.docs;
-
-                if (posts.isEmpty) {
-                  return Center(
-                    child: Text(
-                      "No posts yet. Be the first to share!",
-                      style: TextStyle(
-                        color: primaryColor,
-                        fontSize: 16,
-                      ),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: posts.length,
-                  itemBuilder: (context, index) {
-                    final post = posts[index];
-                    return _buildForumPost(post);
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showCommentsPage(String postId) {
-    final TextEditingController _commentController = TextEditingController();
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(
-            backgroundColor: primaryColor,
-            elevation: 2,
-            centerTitle: true,
-            title: const Text(
-              'Comments',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          backgroundColor: backgroundColor,
-          body: Column(
-            children: [
-              Expanded(
-                child: StreamBuilder<DocumentSnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('forums')
-                      .doc(postId)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return Center(
-                        child: CircularProgressIndicator(color: primaryColor),
-                      );
-                    }
-
-                    final comments = List<Map<String, dynamic>>.from(
-                        snapshot.data!['comments'] ?? []);
-
-                    if (comments.isEmpty) {
-                      return Center(
-                        child: Text(
-                          'No comments yet. Start the conversation!',
-                          style: TextStyle(
-                            color: primaryColor,
-                            fontSize: 16,
-                          ),
-                        ),
-                      );
-                    }
-
-                    // Fetch lawyer profile photos for comments dynamically
-                    return FutureBuilder<List<Map<String, dynamic>>>(
-                      future: _enrichCommentsWithProfilePhoto(comments),
-                      builder: (context, enrichedSnapshot) {
-                        if (!enrichedSnapshot.hasData) {
-                          return Center(
-                            child: CircularProgressIndicator(color: primaryColor),
-                          );
-                        }
-
-                        final enrichedComments = enrichedSnapshot.data!;
-
-                        return ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: enrichedComments.length,
-                          itemBuilder: (context, index) {
-                            final comment = enrichedComments[index];
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  CircleAvatar(
-                                    radius: 24,
-                                    backgroundColor: backgroundColor,
-                                    backgroundImage: (comment['userType'] == 'Lawyer' &&
-                                        comment['profilephotourl'] != null &&
-                                        comment['profilephotourl'].isNotEmpty)
-                                        ? NetworkImage(comment['profilephotourl'])
-                                        : null,
-                                    child: (comment['userType'] != 'Lawyer' ||
-                                        comment['profilephotourl'] == null ||
-                                        comment['profilephotourl'].isEmpty)
-                                        ? Icon(
-                                      Icons.person,
-                                      color: primaryColor,
-                                      size: 24,
-                                    )
-                                        : null,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              comment['userType'] == 'Lawyer'
-                                                  ? comment['userName'] ??
-                                                  'Lawyer'
-                                                  : 'Anonymous',
-                                              style: TextStyle(
-                                                color: primaryColor,
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                            if (comment['userId'] ==
-                                                _auth.currentUser!.uid)
-                                              IconButton(
-                                                icon: Icon(
-                                                  Icons.delete_outline,
-                                                  color: secondaryColor
-                                                      .withOpacity(0.7),
-                                                  size: 20,
-                                                ),
-                                                onPressed: () =>
-                                                    _confirmDeleteComment(
-                                                        postId, comment),
-                                              ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          comment['comment'] ?? '',
-                                          style: TextStyle(
-                                            color: primaryColor.withOpacity(0.8),
-                                            fontSize: 14,
-                                            height: 1.4,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: secondaryColor,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _commentController,
-                        style: TextStyle(color: primaryColor),
-                        decoration: InputDecoration(
-                          hintText: 'Add a comment...',
-                          hintStyle: TextStyle(
-                              color: secondaryColor.withOpacity(0.7)),
-                          filled: true,
-                          fillColor: backgroundColor.withOpacity(0.3),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (_commentController.text.trim().isNotEmpty) {
-                          final newComment = {
-                            'userType': 'Anonymous',
-                            'comment': _commentController.text.trim(),
-                            'userId': _auth.currentUser!.uid,
-                          };
-                          await _addComment(postId, newComment);
-                          _commentController.clear();
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Send',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<List<Map<String, dynamic>>> _enrichCommentsWithProfilePhoto(
       List<Map<String, dynamic>> comments) async {
     final lawyersRef = FirebaseFirestore.instance.collection('lawyer');
@@ -654,7 +842,4 @@ class _ForumPageState extends State<ForumPage> {
     }
     return comments;
   }
-
 }
-
-

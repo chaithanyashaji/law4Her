@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:gap/gap.dart';
 import 'login.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -158,6 +159,11 @@ class _ProfilePageState extends State<ProfilePage> {
           SliverAppBar(
             expandedHeight: 200,
             pinned: true,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(20),
+              ),
+            ),
             backgroundColor: Color(0xFF416d6d),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
@@ -171,6 +177,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Gap(30),
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: Color(0xFFc5d0d3),
@@ -211,7 +218,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 _buildInfoCard(Icons.location_on, 'Location', userData!['place'] ?? 'N/A', 'place'),
                 SizedBox(height: 16),
                 _buildInfoCard(Icons.fingerprint, 'Aadhaar', userData!['aadhaarnumber'] ?? 'N/A', 'aadhaarnumber'),
-                SizedBox(height: 30),
+                SizedBox(height: 50),
                 ElevatedButton.icon(
                   onPressed: () {
                     FirebaseAuth.instance.signOut().then((_) {

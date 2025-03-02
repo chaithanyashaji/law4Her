@@ -1,188 +1,128 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class Verifylawyer extends StatelessWidget {
+class VerifyLawyer extends StatefulWidget {
+  @override
+  _VerifyLawyerState createState() => _VerifyLawyerState();
+}
+
+class _VerifyLawyerState extends State<VerifyLawyer> {
+  final Color primaryColor = const Color(0xFF416d6d);
+  final Color secondaryColor = const Color(0xFF608e8e);
+  final Color backgroundColor = const Color(0xFFc5d0d3);
+
+  String selectedStatus = 'Pending'; // Default filter for status
+  Map<String, bool> isExpandedMap = {}; // Tracks expanded state for each lawyer
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Center(
-          child: Text(
-            'Verify Lawyers',
-            style: TextStyle(color: Colors.white),
-          ),
+        title: const Text(
+          'Verify Lawyers',
+          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
         ),
-        iconTheme: IconThemeData(color: Colors.white),
-        backgroundColor: const Color(0xFF1e1e2a),
-        elevation: 0,
+        backgroundColor: primaryColor,
+        centerTitle: true,
+        elevation: 5,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        ),
       ),
-      backgroundColor: const Color(0xFF1e1e2a),
+      backgroundColor: backgroundColor,
       body: StreamBuilder<QuerySnapshot>(
-        // Stream to fetch lawyers with 'Pending' status
         stream: FirebaseFirestore.instance
             .collection('lawyer')
-            .where('status', isEqualTo: 'Pending')
+            .where('status', isEqualTo: selectedStatus)
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
-              child: CircularProgressIndicator(
-                color: const Color(0xFF44404d),
+              child: CircularProgressIndicator(color: primaryColor),
+            );
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Text(
+                'No lawyers found with status "$selectedStatus".',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: primaryColor,
+                ),
               ),
             );
           }
 
           final lawyers = snapshot.data!.docs;
 
-          if (lawyers.isEmpty) {
-            return Center(
-              child: Text(
-                'No pending lawyer verifications.',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white70,
-                ),
-              ),
-            );
-          }
-
           return ListView.builder(
+            padding: const EdgeInsets.all(16),
             itemCount: lawyers.length,
             itemBuilder: (context, index) {
               final lawyer = lawyers[index];
               final lawyerId = lawyer.id;
               final lawyerData = lawyer.data() as Map<String, dynamic>;
 
+              final isExpanded = isExpandedMap[lawyerId] ?? false;
+
               return Card(
-                margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                color: const Color(0xFF44404d),
+                margin: const EdgeInsets.only(bottom: 16),
+                color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Name: ${lawyerData['name']}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Email: ${lawyerData['email']}',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Status: ${lawyerData['status']}',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'ID Proof:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      // Display the ID proof image directly
-                      GestureDetector(
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: GestureDetector(
                         onTap: () {
-                          // Navigate to full-size image viewer
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => FullSizeImageViewer(
-                                imageUrl: lawyerData['idproofurl'],
-                              ),
-                            ),
-                          );
+                          _showFullImage(context, lawyerData['profilephotourl']);
                         },
-                        child: Container(
-                          height: 200,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              lawyerData['idproofurl'],
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) {
-                                  return child;
-                                } else {
-                                  return Center(
-                                    child: CircularProgressIndicator(
-                                      color: const Color(0xFF44404d),
-                                    ),
-                                  );
-                                }
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                return Center(
-                                  child: Text(
-                                    'Failed to load image',
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
+                        child: CircleAvatar(
+                          radius: 30,
+                          backgroundColor: secondaryColor.withOpacity(0.3),
+                          backgroundImage: lawyerData['profilephotourl'] != null
+                              ? NetworkImage(lawyerData['profilephotourl'])
+                              : null,
+                          child: lawyerData['profilephotourl'] == null
+                              ? Icon(Icons.person, size: 30, color: primaryColor)
+                              : null,
                         ),
                       ),
-                      SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () async {
-                              await _updateLawyerStatus(lawyerId, 'Approved');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 12, horizontal: 20),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: Text(
-                              'Approve',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                          ElevatedButton(
-                            onPressed: () async {
-                              await _updateLawyerStatus(lawyerId, 'Rejected');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 12, horizontal: 20),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: Text(
-                              'Reject',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ],
+                      title: Text(
+                        lawyerData['name'] ?? 'Unknown',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                        ),
                       ),
-                    ],
-                  ),
+                      subtitle: Text(
+                        lawyerData['place'] ?? 'Unknown place',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: secondaryColor,
+                        ),
+                      ),
+                      trailing: IconButton(
+                        icon: Icon(
+                          isExpanded
+                              ? Icons.arrow_drop_up
+                              : Icons.arrow_drop_down,
+                          color: primaryColor,
+                          size: 30,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            isExpandedMap[lawyerId] = !isExpanded;
+                          });
+                        },
+                      ),
+                    ),
+                    if (isExpanded) _buildLawyerDetails(lawyerData, lawyerId),
+                  ],
                 ),
               );
             },
@@ -192,51 +132,175 @@ class Verifylawyer extends StatelessWidget {
     );
   }
 
+  Widget _buildLawyerDetails(Map<String, dynamic> lawyerData, String lawyerId) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Bar ID: ${lawyerData['barid'] ?? 'N/A'}',
+            style: TextStyle(fontSize: 14, color: primaryColor),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Specialization: ${lawyerData['specialization'] ?? 'Unknown'}',
+            style: TextStyle(fontSize: 14, color: primaryColor),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Email: ${lawyerData['email'] ?? 'Unknown'}',
+            style: TextStyle(fontSize: 14, color: primaryColor),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Status: ${lawyerData['status'] ?? 'Pending'}',
+            style: TextStyle(fontSize: 14, color: primaryColor),
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: () {
+              _showFullImage(context, lawyerData['idproofurl']);
+            },
+            child: Container(
+              height: 200,
+              decoration: BoxDecoration(
+                border: Border.all(color: primaryColor),
+                borderRadius: BorderRadius.circular(12),
+                image: lawyerData['idproofurl'] != null
+                    ? DecorationImage(
+                  image: NetworkImage(lawyerData['idproofurl']),
+                  fit: BoxFit.cover,
+                )
+                    : null,
+              ),
+              child: lawyerData['idproofurl'] == null
+                  ? Center(
+                child: Text(
+                  'No ID Photo Available',
+                  style: TextStyle(fontSize: 14, color: primaryColor),
+                ),
+              )
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildStatusButton(context, lawyerId, 'Approved'),
+              _buildStatusButton(context, lawyerId, 'Rejected'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusButton(BuildContext context, String lawyerId, String status) {
+    return ElevatedButton(
+      onPressed: () async {
+        final confirmed = await _showConfirmationDialog(context, status);
+        if (confirmed == true) {
+          await _updateLawyerStatus(lawyerId, status);
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: status == 'Approved' ? primaryColor : secondaryColor,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(color: Colors.white),
+      ),
+    );
+  }
+
+  Future<bool?> _showConfirmationDialog(BuildContext context, String status) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            'Confirm Action',
+            style: TextStyle(color: primaryColor),
+          ),
+          content: Text('Are you sure you want to $status this lawyer?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('Cancel', style: TextStyle(color: secondaryColor)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: status == 'Approved' ? primaryColor : secondaryColor,
+              ),
+              child: Text(
+                'Confirm',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _updateLawyerStatus(String lawyerId, String status) async {
     try {
       await FirebaseFirestore.instance
           .collection('lawyer')
           .doc(lawyerId)
           .update({'status': status});
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Lawyer $status successfully.',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: primaryColor,
+        ),
+      );
     } catch (e) {
-      print('Error updating lawyer status: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Failed to update status. Please try again.',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: secondaryColor,
+        ),
+      );
     }
   }
-}
 
-// Full-size image viewer screen
-class FullSizeImageViewer extends StatelessWidget {
-  final String imageUrl;
+  void _showFullImage(BuildContext context, String? imageUrl) {
+    if (imageUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No image available')),
+      );
+      return;
+    }
 
-  const FullSizeImageViewer({Key? key, required this.imageUrl}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF1e1e2a), // Dark background
-      body: Center(
-        child: Image.network(
-          imageUrl,
-          fit: BoxFit.contain,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) {
-              return child;
-            } else {
-              return Center(
-                child: CircularProgressIndicator(
-                  color: const Color(0xFF44404d),
-                ),
-              );
-            }
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return Center(
-              child: Text(
-                'Failed to load image',
-                style: TextStyle(color: Colors.red),
-              ),
-            );
-          },
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.network(imageUrl),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Close', style: TextStyle(color: primaryColor)),
+            ),
+          ],
         ),
       ),
     );

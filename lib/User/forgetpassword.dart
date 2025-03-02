@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 
@@ -64,16 +65,38 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with SingleTick
       _isLoading = true;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // Call Firebase Auth's sendPasswordResetEmail method
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
 
-    setState(() {
-      _isLoading = false;
-      _emailSent = true;
-      _error = false;
-      _errorMessage = '';
-    });
+      setState(() {
+        _isLoading = false;
+        _emailSent = true;
+        _error = false;
+        _errorMessage = '';
+      });
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _isLoading = false;
+        _error = true;
+
+        if (e.code == 'user-not-found') {
+          _errorMessage = 'No account found with this email address.';
+        } else if (e.code == 'invalid-email') {
+          _errorMessage = 'Invalid email address format.';
+        } else {
+          _errorMessage = 'Error sending email. Please try again.';
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _error = true;
+        _errorMessage = 'An unexpected error occurred. Please try again.';
+      });
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -135,7 +158,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with SingleTick
                         Hero(
                           tag: 'app_logo',
                           child: Image.asset(
-                            'assets/whitelogo.png',
+                            'assets/whitelogo.png', // Replace with your app logo
                             height: 120,
                             width: 120,
                           ),
@@ -164,7 +187,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with SingleTick
                         // Email Input Field
                         Container(
                           decoration: BoxDecoration(
-                            color: Color(0xffc5d0d3),
+                            color: const Color(0xFFC5D0D3),
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -179,19 +202,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with SingleTick
                             style: const TextStyle(color: Color(0xFF416d6d)),
                             decoration: InputDecoration(
                               labelText: 'Email',
-                              labelStyle: TextStyle(color: const Color(0xFF608e8e)),
-                              prefixIcon: Icon(Icons.email_outlined, color: const Color(0xFF608e8e)),
+                              labelStyle: const TextStyle(color: Color(0xFF608e8e)),
+                              prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF608e8e)),
                               border: InputBorder.none,
                               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                              fillColor: Color(0xffc5d0d3),
-                              filled: true,
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Color(0xff416d6d)),
+                                borderSide: const BorderSide(color: Color(0xFF416d6d)),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: const Color(0xFF416d6d), width: 1.5),
+                                borderSide: const BorderSide(color: Color(0xFF416d6d), width: 1.5),
                               ),
                             ),
                             keyboardType: TextInputType.emailAddress,
@@ -208,7 +229,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with SingleTick
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
-                              children: [
+                              children: const [
                                 Icon(Icons.check_circle, color: Colors.green, size: 20),
                                 SizedBox(width: 8),
                                 Expanded(
@@ -229,12 +250,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with SingleTick
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.error, color: Colors.red, size: 20),
-                                SizedBox(width: 8),
+                                const Icon(Icons.error, color: Colors.red, size: 20),
+                                const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     _errorMessage,
-                                    style: TextStyle(color: Colors.red),
+                                    style: const TextStyle(color: Colors.red),
                                   ),
                                 ),
                               ],
@@ -248,10 +269,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with SingleTick
                           height: 55,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            gradient: LinearGradient(
+                            gradient: const LinearGradient(
                               colors: [
-                                const Color(0xFF416d6d),
-                                const Color(0xFF608e8e),
+                                Color(0xFF416d6d),
+                                Color(0xFF608e8e),
                               ],
                             ),
                             boxShadow: [
