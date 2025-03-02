@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "1058685362057",
+    "project_id": "law4her-3ce9a",
+    "storage_bucket": "law4her-3ce9a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1058685362057:android:51a6d617d6b1dca6b28b58",
+        "android_client_info": {
+          "package_name": "com.example.lawforher"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1058685362057-qq6joem46mcebaaga5kopk16nd5kvuqd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.lawforher",
+            "certificate_hash": "64577967da0dc04442cf8f1a2f2da5803ef242f6"
+          }
+        },
+        {
+          "client_id": "1058685362057-lpqlcenpofha55s746kf1hbt70ip8kd7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRgjm10lNxRE0YK5230jpOVyhWGrPXu3c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1058685362057-lpqlcenpofha55s746kf1hbt70ip8kd7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1058685362057-5urlpdfgq2o73evqrqg61944b1jqft0m.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.lawforher"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
