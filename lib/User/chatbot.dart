@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'dart:math';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class Chatbot extends StatefulWidget {
@@ -14,7 +15,7 @@ class Chatbot extends StatefulWidget {
   State<Chatbot> createState() => _ChatbotState();
 }
 
-class _ChatbotState extends State<Chatbot> {
+class _ChatbotState extends State<Chatbot> with TickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
   User? _currentUser;
   final FlutterTts _flutterTts = FlutterTts();
@@ -23,6 +24,7 @@ class _ChatbotState extends State<Chatbot> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<Map<String, dynamic>> messages = [];
   bool _isListening = false;
+  bool _isTyping = false;
   bool _isSpeaking = false;
   double _buttonSize = 56.0;
 
@@ -99,6 +101,52 @@ class _ChatbotState extends State<Chatbot> {
     } catch (e) {
       print("Error clearing chat: $e");
     }
+  }
+
+  Widget _typingIndicator() {
+    return _isTyping
+        ? Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF416d6d).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(3, (index) {
+                return TweenAnimationBuilder(
+                  tween: Tween<double>(begin: 0, end: 1),
+                  duration: Duration(milliseconds: 1500),
+                  curve: Curves.easeInOut,
+                  builder: (context, double value, child) {
+                    // Create a pulsing effect that's slightly offset for each dot
+                    final pulseValue = sin(value * 2 * 3.14159 + (index * 1.0));
+                    final size = 8.0 + (pulseValue + 1) * 1.5;
+                    final opacity = 0.5 + (pulseValue + 1) * 0.25;
+
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: size,
+                      height: size,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF416d6d).withOpacity(opacity),
+                        shape: BoxShape.circle,
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    )
+        : SizedBox.shrink();
   }
 
 
@@ -224,6 +272,7 @@ class _ChatbotState extends State<Chatbot> {
         'message': userMessage,
         'isUserMessage': true,
       });
+      _isTyping = true; // Start typing animation
     });
 
     _scrollToBottom();
@@ -255,6 +304,7 @@ class _ChatbotState extends State<Chatbot> {
             'message': translatedBotMessage,
             'isUserMessage': false,
           });
+          _isTyping = false; // Stop typing animation
         });
 
         _scrollToBottom();
@@ -263,6 +313,9 @@ class _ChatbotState extends State<Chatbot> {
       }
     } catch (e) {
       print("Error sending message: $e");
+      setState(() {
+        _isTyping = false;
+      });
     }
   }
 
@@ -502,9 +555,12 @@ class _ChatbotState extends State<Chatbot> {
           children: [
             Expanded(
               child: ListView.builder(
-
-                itemCount: messages.length,
+                controller: _scrollController,
+                itemCount: messages.length+1,
                 itemBuilder: (context, index) {
+                  if (index == messages.length) {
+                    return _typingIndicator(); // Show typing animation
+                  }
                   final message = messages[index];
                   return Align(
                     alignment: message['isUserMessage']
