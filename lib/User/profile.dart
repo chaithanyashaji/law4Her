@@ -216,8 +216,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 _buildInfoCard(Icons.phone, 'Phone Number', userData!['mobilenumber'] ?? 'N/A', 'mobilenumber'),
                 SizedBox(height: 16),
                 _buildInfoCard(Icons.location_on, 'Location', userData!['place'] ?? 'N/A', 'place'),
-                SizedBox(height: 16),
-                _buildInfoCard(Icons.fingerprint, 'Aadhaar', userData!['aadhaarnumber'] ?? 'N/A', 'aadhaarnumber'),
                 SizedBox(height: 50),
                 ElevatedButton.icon(
                   onPressed: () {

@@ -15,7 +15,6 @@ class _UserSignupState extends State<UserSignup> with SingleTickerProviderStateM
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _mobileNumberController = TextEditingController();
-  final TextEditingController _aadhaarController = TextEditingController();
   final TextEditingController _placeController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _conPasswordController = TextEditingController();
@@ -44,7 +43,6 @@ class _UserSignupState extends State<UserSignup> with SingleTickerProviderStateM
     _nameController.dispose();
     _emailController.dispose();
     _mobileNumberController.dispose();
-    _aadhaarController.dispose();
     _placeController.dispose();
     _passwordController.dispose();
     _conPasswordController.dispose();
@@ -143,13 +141,7 @@ class _UserSignupState extends State<UserSignup> with SingleTickerProviderStateM
                           isNumeric: true,
                         ),
                         const Gap(20),
-                        _buildTextField(
-                          controller: _aadhaarController,
-                          label: "Aadhaar Number",
-                          icon: Icons.credit_card_outlined,
-                          isNumeric: true,
-                        ),
-                        const Gap(20),
+
                         _buildTextField(
                           controller: _placeController,
                           label: "Place",
@@ -352,7 +344,6 @@ class _UserSignupState extends State<UserSignup> with SingleTickerProviderStateM
         await FirebaseFirestore.instance.collection('user').doc(userCredential.user!.uid).set({
           'name': _nameController.text.trim(),
           'email': _emailController.text.trim(),
-          'aadhaarnumber': _aadhaarController.text.trim(),
           'mobilenumber': _mobileNumberController.text.trim(),
           'place': _placeController.text.trim(),
           'password': _passwordController.text.trim(),
@@ -384,14 +375,12 @@ class _UserSignupState extends State<UserSignup> with SingleTickerProviderStateM
     String name = _nameController.text.trim();
     String email = _emailController.text.trim();
     String mobileNumber = _mobileNumberController.text.trim();
-    String aadhaarNumber = _aadhaarController.text.trim();
     String place = _placeController.text.trim();
     String password = _passwordController.text.trim();
     String confirmPassword = _conPasswordController.text.trim();
 
-    if (name.isEmpty || email.isEmpty || mobileNumber.isEmpty ||
-        aadhaarNumber.isEmpty || place.isEmpty || password.isEmpty ||
-        confirmPassword.isEmpty) {
+    if (name.isEmpty || email.isEmpty || mobileNumber.isEmpty || place.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+
       setState(() {
         _errorText = 'All fields are required';
       });

@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1058685362057-i87p3h516e001qk8mb752dqlf9s9l58d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.lawforher",
+            "certificate_hash": "b9f5b0482726164e6d11456f83ee332c88db9686"
+          }
+        },
+        {
           "client_id": "1058685362057-qq6joem46mcebaaga5kopk16nd5kvuqd.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
