@@ -15,6 +15,8 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
   final Color secondaryColor = const Color(0xFF608e8e); // Secondary color
   final Color backgroundColor = const Color(0xFFc5d0d3); // Background color
 
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -264,6 +266,8 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
     }
   }
 }
+
+
 class CommentsPage extends StatelessWidget {
   final String postId;
 
@@ -272,6 +276,7 @@ class CommentsPage extends StatelessWidget {
   final Color primaryColor = const Color(0xFF416d6d);
   final Color secondaryColor = const Color(0xFF608e8e);
   final Color backgroundColor = const Color(0xFFc5d0d3);
+
 
   @override
   Widget build(BuildContext context) {
@@ -403,7 +408,7 @@ class CommentsPage extends StatelessWidget {
                         fontSize: 14,
                       ),
                       filled: true,
-                      fillColor: backgroundColor.withOpacity(0.2),
+                      fillColor: backgroundColor,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                         borderSide: BorderSide.none,
@@ -455,7 +460,9 @@ class CommentsPage extends StatelessWidget {
         ],
       ),
     );
+
   }
+
 
   Widget _buildCommentCard(Map<String, dynamic> comment, String postId, BuildContext context) {
     final currentUserId = FirebaseAuth.instance.currentUser!.uid;
@@ -504,11 +511,28 @@ class CommentsPage extends StatelessWidget {
                         color: Color(0xFF414d6d),
                       ),
                     ),
-                    if (comment['userId'] == currentUserId)
-                      IconButton(
-                        icon: Icon(Icons.delete_outline, color:secondaryColor),
-                        onPressed: () => _confirmDeleteComment(context, postId, comment),
-                      ),
+                    Row(
+                      children: [
+                        if (comment['userId'] == currentUserId)
+                          IconButton(
+                            icon: Icon(Icons.delete_outline, color:secondaryColor),
+                            onPressed: () => _confirmDeleteComment(context, postId, comment),
+                          ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.report_outlined,
+                            color: secondaryColor.withOpacity(0.7),
+                          ),
+                          onPressed: () => _showCommentReportDialog(
+                            context,
+                            postId,
+                            comment['userId'],
+                            comment['userName'] ?? 'User',
+                          ),
+                        ),
+                      ],
+                    )
+
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -523,6 +547,8 @@ class CommentsPage extends StatelessWidget {
       ),
     );
   }
+
+
 
 
   Future<List<Map<String, dynamic>>> _enrichCommentsWithProfilePhoto(
@@ -543,6 +569,105 @@ class CommentsPage extends StatelessWidget {
     }
     return comments;
   }
+
+
+  void _showCommentReportDialog(
+      BuildContext context, String postId, String reportedUserId, String reportedUserName) {
+    final TextEditingController _reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Report Comment", style: TextStyle(color: primaryColor)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              TextField(
+                controller: _reasonController,
+                decoration: const InputDecoration(
+                  labelText: "Reason for reporting",
+                  hintText: "Enter your reason...",
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final reason = _reasonController.text.trim();
+                if (reason.isNotEmpty) {
+                  _sendCommentReport(context,postId, reportedUserId, reason);
+                  Navigator.pop(context);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Please provide a reason for reporting.'),
+                      backgroundColor: primaryColor,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text("Submit"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _sendCommentReport(
+      BuildContext context, String postId, String reportedUserId, String reason) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please log in to report.'),
+          backgroundColor: primaryColor,
+        ),
+      );
+      return;
+    }
+
+    try {
+      await FirebaseFirestore.instance.collection('commentreports').add({
+        'reporterId': currentUser.uid,
+        'reportedUserId': reportedUserId,
+        'postId': postId,
+        'reason': reason,
+        'status': 'pending',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Comment report submitted successfully.'),
+          backgroundColor: primaryColor,
+        ),
+      );
+    } catch (e) {
+      print('Error submitting comment report: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Failed to submit report. Please try again.'),
+          backgroundColor: primaryColor,
+        ),
+      );
+    }
+  }
+
 
   void _confirmDeleteComment(
       BuildContext context, String postId, Map<String, dynamic> comment) async {
