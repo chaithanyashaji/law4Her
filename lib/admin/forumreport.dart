@@ -11,8 +11,9 @@ class _ForumReportsPageState extends State<ForumReportsPage> {
   final Color secondaryColor = const Color(0xFF608e8e);
   final Color backgroundColor = const Color(0xFFc5d0d3);
 
-  Map<String, bool> isExpandedMap = {}; // Tracks expanded state for each report
-  List<Map<String, dynamic>> combinedReports = []; // List to hold reports with post data
+  Map<String, bool> isExpandedMap = {};
+  List<Map<String, dynamic>> forumReports = [];
+  List<Map<String, dynamic>> commentReports = [];
 
   @override
   void initState() {
@@ -22,15 +23,20 @@ class _ForumReportsPageState extends State<ForumReportsPage> {
 
   Future<void> _loadReports() async {
     try {
-      // Fetch all reports
-      final reportsSnapshot = await FirebaseFirestore.instance
+      final forumReportsSnapshot = await FirebaseFirestore.instance
           .collection('forumreports')
           .orderBy('timestamp', descending: true)
           .get();
 
-      final List<Map<String, dynamic>> loadedReports = [];
+      final commentReportsSnapshot = await FirebaseFirestore.instance
+          .collection('commentreports')
+          .orderBy('timestamp', descending: true)
+          .get();
 
-      for (var reportDoc in reportsSnapshot.docs) {
+      final List<Map<String, dynamic>> loadedForumReports = [];
+      final List<Map<String, dynamic>> loadedCommentReports = [];
+
+      for (var reportDoc in forumReportsSnapshot.docs) {
         final report = reportDoc.data();
         final postSnapshot = await FirebaseFirestore.instance
             .collection('forums')
@@ -39,7 +45,7 @@ class _ForumReportsPageState extends State<ForumReportsPage> {
 
         if (postSnapshot.exists) {
           final post = postSnapshot.data();
-          loadedReports.add({
+          loadedForumReports.add({
             'reportId': reportDoc.id,
             'reportData': report,
             'postId': report['postId'],
@@ -48,8 +54,33 @@ class _ForumReportsPageState extends State<ForumReportsPage> {
         }
       }
 
+      for (var reportDoc in commentReportsSnapshot.docs) {
+        final report = reportDoc.data();
+        final postId = report['postId']; // Get the post ID where the comment exists
+        final commentId = report['commentId'];
+
+        final commentSnapshot = await FirebaseFirestore.instance
+            .collection('forums')
+            .doc(postId)
+            .collection('comments')
+            .doc(commentId)
+            .get();
+
+        if (commentSnapshot.exists) {
+          final comment = commentSnapshot.data();
+          loadedCommentReports.add({
+            'reportId': reportDoc.id,
+            'reportData': report,
+            'postId': postId,  // Store postId for deletion
+            'commentId': commentId,
+            'commentData': comment,
+          });
+        }
+      }
+
       setState(() {
-        combinedReports = loadedReports;
+        forumReports = loadedForumReports;
+        commentReports = loadedCommentReports;
       });
     } catch (e) {
       print('Error loading reports: $e');
@@ -58,57 +89,81 @@ class _ForumReportsPageState extends State<ForumReportsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Forum Reports',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-          ),
-        ),
-        backgroundColor: primaryColor,
-        elevation: 5,
-        centerTitle: true,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20),
-          ),
-        ),
-      ),
-      body: combinedReports.isEmpty
-          ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.report_problem, color: primaryColor, size: 50),
-            const SizedBox(height: 10),
-            Text(
-              'No reports available.',
-              style: TextStyle(
-                fontSize: 18,
-                color: primaryColor,
-                fontWeight: FontWeight.bold,
-              ),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: backgroundColor,
+        appBar: AppBar(
+          title: Text(
+            'Reports',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
             ),
+          ),
+          backgroundColor: primaryColor,
+          elevation: 5,
+          centerTitle: true,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
+          ),
+          bottom: TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            tabs: [
+              Tab(text: 'Forum Reports'),
+              Tab(text: 'Comment Reports'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildReportList(forumReports, true),
+            _buildReportList(commentReports, false),
           ],
         ),
-      )
-          : ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: combinedReports.length,
-        itemBuilder: (context, index) {
-          final report = combinedReports[index];
-          return _buildReportCard(context, report);
-        },
       ),
     );
   }
 
-  Widget _buildReportCard(BuildContext context, Map<String, dynamic> report) {
+  Widget _buildReportList(List<Map<String, dynamic>> reports, bool isForum) {
+    return reports.isEmpty
+        ? Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.report_problem, color: primaryColor, size: 50),
+          const SizedBox(height: 10),
+          Text(
+            'No reports available.',
+            style: TextStyle(
+              fontSize: 18,
+              color: primaryColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    )
+        : ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: reports.length,
+      itemBuilder: (context, index) {
+        final report = reports[index];
+        return _buildReportCard(context, report, isForum);
+      },
+    );
+  }
+
+  Widget _buildReportCard(
+      BuildContext context, Map<String, dynamic> report, bool isForum) {
     final isExpanded = isExpandedMap[report['reportId']] ?? false;
+    final reportData = report['reportData'] ?? {};
+    final content = report[isForum ? 'postData' : 'commentData']?['content'] ?? 'No content available';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -121,13 +176,11 @@ class _ForumReportsPageState extends State<ForumReportsPage> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: _buildSectionTitle("Post Content"),
+            child: _buildSectionTitle(isForum ? "Post Content" : "Comment Content"),
           ),
           ListTile(
             title: Text(
-              isExpanded
-                  ? '${report['postData']['content'] ?? 'No content available'}'
-                  : '${_truncateContent(report['postData']['content'] ?? 'No content available')}...',
+              isExpanded ? content : '${_truncateContent(content)}...',
               style: TextStyle(
                 fontSize: 14,
                 color: primaryColor,
@@ -146,13 +199,14 @@ class _ForumReportsPageState extends State<ForumReportsPage> {
               },
             ),
           ),
-          if (isExpanded) _buildExpandedDetails(context, report),
+          if (isExpanded) _buildExpandedDetails(context, report, isForum),
         ],
       ),
     );
   }
 
-  Widget _buildExpandedDetails(BuildContext context, Map<String, dynamic> report) {
+  Widget _buildExpandedDetails(
+      BuildContext context, Map<String, dynamic> report, bool isForum) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
@@ -167,14 +221,16 @@ class _ForumReportsPageState extends State<ForumReportsPage> {
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
-            onPressed: () => _confirmDeletePost(
+            onPressed: () => _confirmDelete(
               context,
               report['postId'],
+              report['commentId'] ?? report['postId'], // Handle both cases
               report['reportId'],
+              isForum,
             ),
             icon: const Icon(Icons.delete, color: Colors.white),
             label: const Text(
-              'Delete Post',
+              'Delete',
               style: TextStyle(color: Colors.white),
             ),
             style: ElevatedButton.styleFrom(
@@ -189,8 +245,21 @@ class _ForumReportsPageState extends State<ForumReportsPage> {
     );
   }
 
+  Future<void> _confirmDelete(BuildContext context, String postId, String commentId, String reportId, bool isForum) async {
+    final firestore = FirebaseFirestore.instance;
+
+    if (isForum) {
+      await firestore.collection('forums').doc(postId).delete();
+      await firestore.collection('forumreports').doc(reportId).delete();
+    } else {
+      await firestore.collection('forums').doc(postId).collection('comments').doc(commentId).delete();
+      await firestore.collection('commentreports').doc(reportId).delete();
+    }
+
+    _loadReports();
+  }
+
   String _truncateContent(String content) {
-    // Truncate content to the first 30 characters
     return content.length > 30 ? content.substring(0, 30) : content;
   }
 
@@ -203,62 +272,5 @@ class _ForumReportsPageState extends State<ForumReportsPage> {
         color: primaryColor,
       ),
     );
-  }
-
-  Future<void> _confirmDeletePost(BuildContext context, String postId, String reportId) async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('Confirm Delete', style: TextStyle(color: primaryColor)),
-          content: const Text('Are you sure you want to delete this post?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text('Cancel', style: TextStyle(color: secondaryColor)),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: secondaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text('Delete', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (shouldDelete == true) {
-      _deletePost(postId, reportId);
-    }
-  }
-
-  Future<void> _deletePost(String postId, String reportId) async {
-    try {
-      await FirebaseFirestore.instance.collection('forums').doc(postId).delete();
-      await FirebaseFirestore.instance.collection('forumreports').doc(reportId).delete();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Post deleted successfully.', style: TextStyle(color: Colors.white)),
-          backgroundColor: primaryColor,
-        ),
-      );
-
-      // Reload reports after deletion
-      _loadReports();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to delete post. Please try again.', style: TextStyle(color: Colors.white)),
-          backgroundColor: secondaryColor,
-        ),
-      );
-    }
   }
 }

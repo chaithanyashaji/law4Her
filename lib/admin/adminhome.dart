@@ -45,7 +45,7 @@ class AdminHomePage extends StatelessWidget {
             SizedBox(height: 20),
             _buildDashboardCard(
               icon: Icons.forum,
-              label: 'Forum Reports',
+              label: 'Forum & Comment Reports',
               onTap: () => _navigateToForumReports(context),
             ),
             SizedBox(height: 20),

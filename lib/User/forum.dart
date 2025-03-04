@@ -294,9 +294,12 @@ class _ForumPageState extends State<ForumPage> {
   Widget _buildForumPost(DocumentSnapshot post) {
     final data = post.data() as Map<String, dynamic>;
     final comments = List<Map<String, dynamic>>.from(data['comments'] ?? []);
-    final likes = List<String>.from(data['likes'] ?? []);
     final currentUserId = _auth.currentUser!.uid;
-    final isLiked = likes.contains(currentUserId);
+    final thumbsUp = List<String>.from(data['thumbsUp'] ?? []);
+    final thumbsDown = List<String>.from(data['thumbsDown'] ?? []);
+    final isThumbsUp = thumbsUp.contains(currentUserId);
+    final isThumbsDown = thumbsDown.contains(currentUserId);
+
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -340,12 +343,19 @@ class _ForumPageState extends State<ForumPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildActionButton(
-                  onTap: () => _toggleLike(post.id, likes, currentUserId),
-                  icon: isLiked ? Icons.favorite_rounded : Icons
-                      .favorite_outline_rounded,
-                  count: likes.length,
-                  active: isLiked,
+                  onTap: () => _toggleThumbs(post.id, thumbsUp, thumbsDown, currentUserId, true),
+                  icon: isThumbsUp ? Icons.thumb_up_rounded : Icons.thumb_up_outlined,
+                  count: thumbsUp.length,
+                  active: isThumbsUp,
                 ),
+                _buildActionButton(
+                  onTap: () => _toggleThumbs(post.id, thumbsUp, thumbsDown, currentUserId, false),
+                  icon: isThumbsDown ? Icons.thumb_down_rounded : Icons.thumb_down_outlined,
+                  count: thumbsDown.length,
+                  active: isThumbsDown,
+                ),
+
+
                 _buildActionButton(
                   onTap: () => _showCommentsPage(post.id),
                   icon: Icons.chat_bubble_outline_rounded,
@@ -446,7 +456,8 @@ class _ForumPageState extends State<ForumPage> {
     try {
       await FirebaseFirestore.instance.collection('forums').add({
         'content': _postController.text.trim(),
-        'likes': [],
+        'thumbsUp': [],
+        'thumbsDown': [],
         'comments': [],
         'timestamp': FieldValue.serverTimestamp(),
         'userId': _auth.currentUser!.uid,
@@ -470,7 +481,7 @@ class _ForumPageState extends State<ForumPage> {
           Icon(
             icon,
             size: 20,
-            color: active ? secondaryColor : secondaryColor,
+            color: active ? primaryColor : secondaryColor,
           ),
           const SizedBox(width: 4),
           Text(
@@ -486,19 +497,34 @@ class _ForumPageState extends State<ForumPage> {
     );
   }
 
-  Future<void> _toggleLike(String postId, List<String> likes, String currentUserId) async {
+  Future<void> _toggleThumbs(String postId, List<String> thumbsUp, List<String> thumbsDown, String currentUserId, bool isThumbsUp) async {
     try {
       final postRef = FirebaseFirestore.instance.collection('forums').doc(postId);
 
-      if (likes.contains(currentUserId)) {
-        await postRef.update({
-          'likes': FieldValue.arrayRemove([currentUserId]),
-        });
+      if (isThumbsUp) {
+        if (thumbsUp.contains(currentUserId)) {
+          await postRef.update({
+            'thumbsUp': FieldValue.arrayRemove([currentUserId]),
+          });
+        } else {
+          await postRef.update({
+            'thumbsUp': FieldValue.arrayUnion([currentUserId]),
+            'thumbsDown': FieldValue.arrayRemove([currentUserId]), // Remove from thumbsDown if already there
+          });
+        }
       } else {
-        await postRef.update({
-          'likes': FieldValue.arrayUnion([currentUserId]),
-        });
+        if (thumbsDown.contains(currentUserId)) {
+          await postRef.update({
+            'thumbsDown': FieldValue.arrayRemove([currentUserId]),
+          });
+        } else {
+          await postRef.update({
+            'thumbsDown': FieldValue.arrayUnion([currentUserId]),
+            'thumbsUp': FieldValue.arrayRemove([currentUserId]), // Remove from thumbsUp if already there
+          });
+        }
       }
+
     } catch (e) {
       print("Error toggling like: $e");
     }

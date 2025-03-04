@@ -85,6 +85,7 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
     final data = post.data() as Map<String, dynamic>;
     final comments = List<Map<String, dynamic>>.from(data['comments'] ?? []);
     final likes = List<String>.from(data['likes'] ?? []);
+    final dislikes = List<String>.from(data['dislikes'] ?? []);
     final currentUserId = _auth.currentUser!.uid;
 
     return Container(
@@ -118,19 +119,41 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               GestureDetector(
-                onTap: () => _toggleLike(post.id, likes, currentUserId),
-                child: Row(
+                onTap: () => _toggleLike(post.id, likes, dislikes, currentUserId),
+    child: Row(
                   children: [
                     Icon(
                       likes.contains(currentUserId)
-                          ? Icons.favorite
-                          : Icons.favorite_outline,
+                          ? Icons.thumb_up
+                          : Icons.thumb_up_off_alt,
+                      size: 20,
+                      color: primaryColor,
+                    ),
+
+
+
+                    const SizedBox(width: 5),
+                    Text(
+                      '${likes.length}',
+                      style: const TextStyle(color: Color(0xFF416d6d), fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () => _toggleDislike(post.id, dislikes, likes, currentUserId),
+    child: Row(
+                  children: [
+                    Icon(
+                      dislikes.contains(currentUserId)
+                          ? Icons.thumb_down
+                          : Icons.thumb_down_off_alt,
                       size: 20,
                       color: primaryColor,
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      '${likes.length}',
+                      '${dislikes.length}',
                       style: const TextStyle(color: Color(0xFF416d6d), fontSize: 14),
                     ),
                   ],
@@ -167,24 +190,35 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
     );
   }
 
-  Future<void> _toggleLike(
-      String postId, List<String> likes, String currentUserId) async {
-    try {
-      final postRef = FirebaseFirestore.instance.collection('forums').doc(postId);
+  Future<void> _toggleLike(String postId, List<String> likes, List<String> dislikes, String currentUserId) async {
+    final postRef = FirebaseFirestore.instance.collection('forums').doc(postId);
 
-      if (likes.contains(currentUserId)) {
-        await postRef.update({
-          'likes': FieldValue.arrayRemove([currentUserId]),
-        });
-      } else {
-        await postRef.update({
-          'likes': FieldValue.arrayUnion([currentUserId]),
-        });
-      }
-    } catch (e) {
-      print("Error toggling like: $e");
+    if (likes.contains(currentUserId)) {
+      await postRef.update({
+        'likes': FieldValue.arrayRemove([currentUserId]),
+      });
+    } else {
+      await postRef.update({
+        'likes': FieldValue.arrayUnion([currentUserId]),
+        'dislikes': FieldValue.arrayRemove([currentUserId]), // Remove dislike if present
+      });
     }
   }
+  Future<void> _toggleDislike(String postId, List<String> dislikes, List<String> likes, String currentUserId) async {
+    final postRef = FirebaseFirestore.instance.collection('forums').doc(postId);
+
+    if (dislikes.contains(currentUserId)) {
+      await postRef.update({
+        'dislikes': FieldValue.arrayRemove([currentUserId]),
+      });
+    } else {
+      await postRef.update({
+        'dislikes': FieldValue.arrayUnion([currentUserId]),
+        'likes': FieldValue.arrayRemove([currentUserId]), // Remove like if present
+      });
+    }
+  }
+
 
   void _showCommentsPage(String postId) {
     Navigator.push(
