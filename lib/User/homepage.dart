@@ -9,15 +9,19 @@ import 'package:law4her/User/lawyerconsultation.dart';
 import 'package:law4her/User/profile.dart';
 import 'package:law4her/User/userchat.dart';
 import 'package:law4her/User/wallet.dart';
-import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
+  late AnimationController _animationController;
+  final List<String> _titles = ['Home', 'Forum', 'Lawyer', 'Chats', 'Profile'];
+  bool _isReady = false;
 
   final List<Widget> _pages = [
     UserHomeScreen(),
@@ -27,202 +31,488 @@ class _HomePageState extends State<HomePage> {
     ProfilePage(),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+
+    // Add a delay before starting animations to prevent red flashes
+    Future.delayed(Duration(milliseconds: 100), () {
+      if (mounted) {
+        setState(() {
+          _isReady = true;
+        });
+        _animationController.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
+    if (_selectedIndex != index) {
+      setState(() {
+        _selectedIndex = index;
+      });
+      _animationController.reset();
+      _animationController.forward();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Start with a plain container to prevent red flash
+    if (!_isReady) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF5F7F9),
+        body: Container(),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7F9),
+      body: AnimatedBuilder(
+        animation: _animationController,
+        builder: (context, child) {
+          return FadeTransition(
+            opacity: CurvedAnimation(
+              parent: _animationController,
+              curve: Curves.easeInOut,
+            ),
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: _pages,
+            ),
+          );
+        },
+      ),
+      floatingActionButton: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 800),
+        curve: Curves.elasticOut,
+        builder: (context, value, child) {
+          return Transform.scale(
+            scale: value,
+            child: child,
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 15),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF416d6d), Color(0xFF608e8e)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF416d6d).withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => Chatbot(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
+                  transitionDuration: const Duration(milliseconds: 300),
+                ),
+              );
+            },
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 1200),
+              curve: Curves.elasticOut,
+              builder: (context, value, child) {
+                return Transform.rotate(
+                  angle: (1.0 - value) * 1.0,
+                  child: child,
+                );
+              },
+              child: const Icon(Icons.smart_toy, color: Colors.white, size: 28),
+            ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: List.generate(5, (index) {
+              return InkWell(
+                onTap: () => _onItemTapped(index),
+                borderRadius: BorderRadius.circular(20),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutQuint,
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: _selectedIndex == index
+                        ? const Color(0xFF416d6d).withOpacity(0.1)
+                        : Colors.transparent,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 400),
+                        decoration: BoxDecoration(
+                          boxShadow: _selectedIndex == index
+                              ? [
+                            BoxShadow(
+                              color: const Color(0xFF416d6d).withOpacity(0.4),
+                              blurRadius: 10,
+                              spreadRadius: 1,
+                            )
+                          ]
+                              : [],
+                        ),
+                        child: Icon(
+                          _getIcon(index),
+                          color: _selectedIndex == index
+                              ? const Color(0xFF416d6d)
+                              : Colors.grey.shade400,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TweenAnimationBuilder<double>(
+                        tween: Tween<double>(
+                          begin: 0.8,
+                          end: _selectedIndex == index ? 1.0 : 0.8,
+                        ),
+                        duration: const Duration(milliseconds: 200),
+                        builder: (context, value, child) {
+                          return Transform.scale(
+                            scale: value,
+                            child: child,
+                          );
+                        },
+                        child: Text(
+                          _titles[index],
+                          style: TextStyle(
+                            color: _selectedIndex == index
+                                ? const Color(0xFF416d6d)
+                                : Colors.grey.shade400,
+                            fontSize: 12,
+                            fontWeight: _selectedIndex == index
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _getIcon(int index) {
+    switch (index) {
+      case 0:
+        return Icons.home_rounded;
+      case 1:
+        return Icons.forum_rounded;
+      case 2:
+        return Icons.gavel_rounded;
+      case 3:
+        return Icons.message_rounded;
+      case 4:
+        return Icons.person_rounded;
+      default:
+        return Icons.error;
+    }
+  }
+}
+
+class UserHomeScreen extends StatefulWidget {
+  @override
+  _UserHomeScreenState createState() => _UserHomeScreenState();
+}
+
+class _UserHomeScreenState extends State<UserHomeScreen> {
+  bool _animationsReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Delay animations to prevent red flash on initial render
+    Future.delayed(Duration(milliseconds: 150), () {
+      if (mounted) {
+        setState(() {
+          _animationsReady = true;
+        });
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFc5d0d3),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
-      floatingActionButton: Container(
-        margin: const EdgeInsets.only(bottom: 5), // Increased margin for proper spacing
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => Chatbot()),
-            );
-          },
-          backgroundColor: const Color(0xFF416d6d),
-          child: const Icon(Icons.smart_toy, color: Color(0xFFc5d0d3)),
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Container(
-          height: 70, // Reduced height to avoid overflow
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Adjusted margins
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF416d6d), Color(0xFF608e8e)],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 12,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(25),
-            child: BottomNavigationBar(
-              elevation: 0,
-              backgroundColor: Colors.transparent,
-              type: BottomNavigationBarType.fixed,
-              items: const <BottomNavigationBarItem>[
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home_rounded),
-                  label: 'Home',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.forum_rounded),
-                  label: 'Forum',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.gavel_rounded),
-                  label: 'Lawyer',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.message_rounded),
-                  label: 'Chats',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person_rounded),
-                  label: 'Profile',
-                ),
-              ],
-              currentIndex: _selectedIndex,
-              selectedItemColor: const Color(0xFFc5d0d3),
-              unselectedItemColor: const Color(0xFFc5d0d3).withOpacity(0.6),
-              onTap: _onItemTapped,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-
-class UpwardCurveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height - 50);
-
-    var firstControlPoint = Offset(size.width / 4, size.height);
-    var firstEndPoint = Offset(size.width / 2, size.height - 30);
-    path.quadraticBezierTo(
-      firstControlPoint.dx,
-      firstControlPoint.dy,
-      firstEndPoint.dx,
-      firstEndPoint.dy,
-    );
-
-    var secondControlPoint = Offset(size.width - (size.width / 4), size.height - 60);
-    var secondEndPoint = Offset(size.width, size.height - 40);
-    path.quadraticBezierTo(
-      secondControlPoint.dx,
-      secondControlPoint.dy,
-      secondEndPoint.dx,
-      secondEndPoint.dy,
-    );
-
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
-}
-
-class UserHomeScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFc5d0d3),
+      backgroundColor: const Color(0xFFF5F7F9),
       body: Column(
         children: [
-          // Fixed curved AppBar
-          Stack(
-            children: [
-              ClipPath(
-                clipper: UpwardCurveClipper(),
-                child: Container(
-                  height: 220,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF416d6d),
-                        Color(0xFF608e8e),
-                      ],
+          // Modern app bar with subtle curves
+          Container(
+            height: 260,
+            child: Stack(
+              children: [
+                // Background gradient with soft wave
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: _animationsReady ? 0.0 : 1.0, end: 1.0),
+                  duration: const Duration(milliseconds: 1000),
+                  curve: Curves.easeOutQuint,
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: _animationsReady ? (1.0 - (1.0 - value) * 0.05) : 1.0,
+                      child: Opacity(
+                        opacity: _animationsReady ? value : 1.0,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: ClipPath(
+                    clipper: GentleWaveClipper(),
+                    child: Container(
+                      height: 260,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF416d6d),
+                            Color(0xFF608e8e),
+                          ],
+                          stops: [0.3, 1.0],
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 40),
-                  child: Image.asset(
-                    'assets/whitelogo.png',
-                    fit: BoxFit.contain,
-                    height: 150,
+                // Logo overlay with drop shadow
+                Positioned(
+                  top: 50,
+                  left: 0,
+                  right: 0,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: _animationsReady ? 0.0 : 1.0, end: 1.0),
+                    duration: const Duration(milliseconds: 1200),
+                    curve: Curves.easeOutQuint,
+                    builder: (context, value, child) {
+                      return Transform.translate(
+                        offset: _animationsReady
+                            ? Offset(0, (1.0 - value) * 30)
+                            : Offset.zero,
+                        child: Opacity(
+                          opacity: _animationsReady ? value : 1.0,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Container(
+                      height: 160,
+                      child: Image.asset(
+                        'assets/whitelogo.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                top: 155, // Wallet position
-                right: 16,
-                child: WalletDisplay(),
-              ),
-            ],
+                // Welcome message
+                Positioned(
+                  top: 50,
+                  left: 20,
+                  child: StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('user')
+                        .doc(FirebaseAuth.instance.currentUser?.uid)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      String name = "User";
+                      if (snapshot.hasData && snapshot.data!.exists) {
+                        final data = snapshot.data!.data() as Map<String, dynamic>;
+                        name = data['name'] ?? "User";
+                        name = name.split(' ')[0]; // Get first name only
+                      }
+                      return TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: _animationsReady ? 0.0 : 1.0, end: 1.0),
+                        duration: const Duration(milliseconds: 800),
+                        curve: Curves.easeOut,
+                        builder: (context, value, child) {
+                          return Transform.translate(
+                            offset: _animationsReady
+                                ? Offset((1.0 - value) * -30, 0)
+                                : Offset.zero,
+                            child: Opacity(
+                              opacity: _animationsReady ? value : 1.0,
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: Text(
+                          "Hello, $name!",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                // Wallet with improved design
+                Positioned(
+                  top: 185,
+                  right: 20,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: _animationsReady ? 0.0 : 1.0, end: 1.0),
+                    duration: const Duration(milliseconds: 800),
+                    curve: Curves.easeOutBack,
+                    builder: (context, value, child) {
+                      return Transform.translate(
+                        offset: _animationsReady
+                            ? Offset((1.0 - value) * 50, 0)
+                            : Offset.zero,
+                        child: Opacity(
+                          opacity: _animationsReady ? value : 1.0,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: WalletDisplay(),
+                  ),
+                ),
+              ],
+            ),
           ),
-          // Scrollable content
+          // Services section header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: _animationsReady ? 0.0 : 1.0, end: 1.0),
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeOut,
+              builder: (context, value, child) {
+                return Transform.translate(
+                  offset: _animationsReady
+                      ? Offset(0, (1.0 - value) * 20)
+                      : Offset.zero,
+                  child: Opacity(
+                    opacity: _animationsReady ? value : 1.0,
+                    child: child,
+                  ),
+                );
+              },
+              child: Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF416d6d),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Our Services",
+                    style: TextStyle(
+                      color: const Color(0xFF416d6d),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Scrollable services grid
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
+                physics: BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(top: 10, bottom: 100),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  childAspectRatio: 0.95,
+                  childAspectRatio: 0.9,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                 ),
                 itemCount: 5,
                 itemBuilder: (context, index) {
-                  return ServiceCard(
-                    icon: _getIcon(index),
-                    title: _getTitle(index),
-                    color: index.isEven
-                        ? const Color(0xFF416d6d)
-                        : const Color(0xFF608e8e),
-                    onTap: () {
-                      _navigateToPage(index, context);
+                  // Staggered animation for grid items
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: _animationsReady ? 0.0 : 1.0, end: 1.0),
+                    duration: Duration(milliseconds: 600 + (index * 100)),
+                    curve: Curves.easeOutQuint,
+                    builder: (context, value, child) {
+                      return Transform.translate(
+                        offset: _animationsReady
+                            ? Offset(0, (1.0 - value) * 50)
+                            : Offset.zero,
+                        child: Opacity(
+                          opacity: _animationsReady ? value : 1.0,
+                          child: child,
+                        ),
+                      );
                     },
+                    child: ServiceCard(
+                      icon: _getIconForService(index),
+                      title: _getTitleForService(index),
+                      description: _getDescriptionForService(index),
+                      color: index == 0
+                          ? const Color(0xFF416d6d)
+                          : index == 1
+                          ? const Color(0xFF608e8e)
+                          : index == 2
+                          ? const Color(0xFF265557)
+                          : index == 3
+                          ? const Color(0xFF6da6a6)
+                          : const Color(0xFF357575),
+                      onTap: () {
+                        _navigateToService(index, context);
+                      },
+                    ),
                   );
                 },
               ),
@@ -233,7 +523,7 @@ class UserHomeScreen extends StatelessWidget {
     );
   }
 
-  IconData _getIcon(int index) {
+  IconData _getIconForService(int index) {
     switch (index) {
       case 0:
         return Icons.forum_rounded;
@@ -250,54 +540,103 @@ class UserHomeScreen extends StatelessWidget {
     }
   }
 
-  String _getTitle(int index) {
+  String _getTitleForService(int index) {
     switch (index) {
       case 0:
-        return 'Community\nForum';
+        return 'Community Forum';
       case 1:
-        return 'Consult\nLawyer';
+        return 'Consult Lawyer';
       case 2:
-        return 'Your\nChats';
+        return 'Your Chats';
       case 3:
-        return 'AI\nAssistant';
+        return 'AI Assistant';
       case 4:
-        return 'Emergency\nContacts';
+        return 'Emergency';
       default:
         return 'Unknown';
     }
   }
 
-  void _navigateToPage(int index, BuildContext context) {
+  String _getDescriptionForService(int index) {
     switch (index) {
       case 0:
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => ForumPage()));
-        break;
+        return 'Connect with others';
       case 1:
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => LawyerConsultation()));
-        break;
+        return 'Legal expertise';
       case 2:
-        Navigator.push(
-            context, MaterialPageRoute(builder: (context) => UserChat()));
-        break;
+        return 'Your conversations';
       case 3:
-        Navigator.push(
-            context, MaterialPageRoute(builder: (context) => Chatbot()));
-        break;
+        return 'Get instant help';
       case 4:
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => EmergencyContactsPage()));
-        break;
+        return 'Quick access to help';
       default:
-        break;
+        return '';
     }
+  }
+
+  void _navigateToService(int index, BuildContext context) {
+    final destinations = [
+      ForumPage(),
+      LawyerConsultation(),
+      UserChat(),
+      Chatbot(),
+      EmergencyContactsPage(),
+    ];
+
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => destinations[index],
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutQuint,
+            )),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 400),
+      ),
+    );
   }
 }
 
+class GentleWaveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.lineTo(0, size.height - 60);
 
+    final firstControlPoint = Offset(size.width * 0.25, size.height - 30);
+    final firstEndPoint = Offset(size.width * 0.5, size.height - 45);
+    path.quadraticBezierTo(
+      firstControlPoint.dx,
+      firstControlPoint.dy,
+      firstEndPoint.dx,
+      firstEndPoint.dy,
+    );
 
+    final secondControlPoint = Offset(size.width * 0.75, size.height - 60);
+    final secondEndPoint = Offset(size.width, size.height - 30);
+    path.quadraticBezierTo(
+      secondControlPoint.dx,
+      secondControlPoint.dy,
+      secondEndPoint.dx,
+      secondEndPoint.dy,
+    );
 
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
 
 class WalletDisplay extends StatelessWidget {
   @override
@@ -335,37 +674,77 @@ class WalletDisplay extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => WalletPage()),
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => WalletPage(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 300),
+          ),
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(25),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
               offset: const Offset(0, 4),
+              spreadRadius: 0,
             ),
           ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.account_balance_wallet,
-              color: Color(0xFF416d6d),
-              size: 18,
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF416d6d).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.account_balance_wallet,
+                color: Color(0xFF416d6d),
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Balance",
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 12,
+                  ),
+                ),
+                Text(
+                  walletBalance,
+                  style: TextStyle(
+                    color: Color(0xFF416d6d),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(width: 8),
-            Text(
-              walletBalance,
-              style: TextStyle(
+            Container(
+              padding: EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF416d6d).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(
+                Icons.arrow_forward_ios,
                 color: Color(0xFF416d6d),
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+                size: 12,
               ),
             ),
           ],
@@ -374,9 +753,11 @@ class WalletDisplay extends StatelessWidget {
     );
   }
 }
+
 class ServiceCard extends StatelessWidget {
   final IconData icon;
   final String title;
+  final String description;
   final Color color;
   final VoidCallback onTap;
 
@@ -384,6 +765,7 @@ class ServiceCard extends StatelessWidget {
     Key? key,
     required this.icon,
     required this.title,
+    required this.description,
     required this.color,
     required this.onTap,
   }) : super(key: key);
@@ -394,44 +776,62 @@ class ServiceCard extends StatelessWidget {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: color.withOpacity(0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+            spreadRadius: 1,
           ),
         ],
       ),
       child: Material(
-        color: color,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: onTap,
-          child: Container(
-            padding: EdgeInsets.all(16),
+          splashColor: color.withOpacity(0.1),
+          highlightColor: color.withOpacity(0.05),
+          child: Padding(
+            padding: EdgeInsets.all(20),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Container(
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.2),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      ),
+                    ],
                   ),
                   child: Icon(
                     icon,
-                    size: 35,
-                    color: Colors.white,
+                    size: 30,
+                    color: color,
                   ),
                 ),
-                SizedBox(height: 16),
+                Spacer(),
                 Text(
                   title,
-                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
+                    color: Colors.black87,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     height: 1.2,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 12,
                   ),
                 ),
               ],
