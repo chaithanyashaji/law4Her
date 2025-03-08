@@ -59,7 +59,8 @@ Law4Her is a comprehensive legal assistance platform designed to support women i
 
 <p align="center">
     <img src="https://github.com/user-attachments/assets/68fbfe6c-0127-457d-9eda-3341cf0611ac" width="250">
-  <img src="https://github.com/user-attachments/assets/b173b0ed-ddea-4460-8589-b5940ffe6bef" width="250">
+   <img src="https://github.com/user-attachments/assets/dfe8b3c3-d5eb-42bd-a285-0f605947f534" width="250">
+ 
   <img src="https://github.com/user-attachments/assets/9bde15ef-7298-44b0-8eb1-af0fe0bfdc91" width="250">
 </p>
 
@@ -68,7 +69,7 @@ Law4Her is a comprehensive legal assistance platform designed to support women i
 ### 🔹 **Difference Between IPC and BNS**
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/dfe8b3c3-d5eb-42bd-a285-0f605947f534" width="250">
+   <img src="https://github.com/user-attachments/assets/b173b0ed-ddea-4460-8589-b5940ffe6bef" width="250">
 </p>
 
 ---
