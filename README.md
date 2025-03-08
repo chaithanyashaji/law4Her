@@ -37,7 +37,64 @@ Law4Her is a comprehensive legal assistance platform designed to support women i
 
 ---
 
-### 🔍 AI and NLP Integration
+## 📱 **Screenshots**
+
+### 🔹 **Splash Screen**
+![Splash Screen](https://github.com/user-attachments/assets/28af6a3d-aead-4c10-90de-00be58aa2bf2)
+
+---
+
+### 🔹 **User Home Screen**
+![User Home Screen](https://github.com/user-attachments/assets/0027f998-c5b1-490b-9209-ae0ed7d517e1)
+
+---
+
+### 🔹 **User Profile**
+![User Profile](https://github.com/user-attachments/assets/520f1193-2f77-4082-8525-73f33bbcb3b4)
+
+---
+
+### 🔹 **User Wallet**
+![User Wallet](https://github.com/user-attachments/assets/9bde15ef-7298-44b0-8eb1-af0fe0bfdc91)
+
+---
+
+### 🔹 **Lawyer Home Screen**
+![Lawyer Home Screen](https://github.com/user-attachments/assets/336f04d1-b616-40ab-8375-768d645b56a9)
+
+---
+
+### 🔹 **Lawyer Profile**
+![Lawyer Profile](https://github.com/user-attachments/assets/57b2583d-acba-4858-8b63-cbdfd42a22bc)
+
+---
+
+### 🔹 **Lawyer Earnings**
+![Lawyer Earnings](https://github.com/user-attachments/assets/61e96ce5-2b1a-403c-8396-be94d0a7982a)
+
+---
+
+### 🔹 **Lawyers List**
+![Lawyers List](https://github.com/user-attachments/assets/b173b0ed-ddea-4460-8589-b5940ffe6bef)
+
+---
+
+### 🔹 **IPC Chatbot Screen**
+![IPC Chatbot Screen](https://github.com/user-attachments/assets/68fbfe6c-0127-457d-9eda-3341cf0611ac)
+
+---
+
+### 🔹 **Difference Between IPC and BNS**
+![Difference Between IPC and BNS](https://github.com/user-attachments/assets/dfe8b3c3-d5eb-42bd-a285-0f605947f534)
+
+---
+
+### 🔹 **Anonymous Forum**
+![Anonymous Forum](https://github.com/user-attachments/assets/2476cc56-19b6-4c05-aeaf-97107719b714)
+
+---
+
+## 🔍 AI and NLP Integration
 - **LangChain:** For robust NLP and Retrieval-Augmented Generation (RAG).
 - **Custom Prompt Templates:** Designed for legal queries.
 - **FAISS Vector Database:** Efficient text chunk indexing and retrieval.
