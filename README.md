@@ -90,7 +90,7 @@ Law4Her is a comprehensive legal assistance platform designed to support women i
 - **Frontend:** Flutter
 - **Backend:** FastAPI
 - **Database:** Firebase
-- **NLP:** LEGAL-BERT, Mistral AI, Nomic AI
+- **NLP:** Mistral AI, Nomic AI
 - **Payments:** Razorpay
 
 ---
