@@ -22,10 +22,21 @@ Law4Her is a comprehensive legal assistance platform designed to support women i
 
 <p align="center">
    <img src="https://github.com/user-attachments/assets/2476cc56-19b6-4c05-aeaf-97107719b714" width="250">
+   <img src="https://github.com/user-attachments/assets/f840fed4-312d-4354-9a4f-8a2cb3d9794d" width="250">
+    <img src="https://github.com/user-attachments/assets/770ea12c-b132-4f9c-ae13-dcfd532dcf21" width="250">
+     <img src="https://github.com/user-attachments/assets/e9e86c81-9040-4985-afe5-0ee9a10c9c27" width="250">
+    
+   
+</p>
+
+---
+
+### 🔹 **Registration for lawyers**
+
+<p align="center">
   
- 
- 
-  
+   <img src="https://github.com/user-attachments/assets/760f7fea-cbfa-4272-93d2-d57f434d8813" width="250">
+   
 </p>
 
 ---
