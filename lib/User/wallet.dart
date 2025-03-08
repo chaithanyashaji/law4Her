@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class WalletPage extends StatefulWidget {
   @override
@@ -142,7 +143,7 @@ class _WalletPageState extends State<WalletPage> {
     }
 
     var options = {
-      'key': 'rzp_test_hTDVfoNxgYw0In', // Replace with your Razorpay key
+      'key': dotenv.env['RAZORPAY_KEY'] ?? '', // Replace with your Razorpay key
       'amount': amount * 100, // Amount in paise
       'name': 'Law4Her',
       'description': 'Wallet Recharge',

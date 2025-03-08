@@ -3,21 +3,24 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:law4her/splashscreen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await dotenv.load();
   // Initialize Firebase with platform-specific configuration
   if (kIsWeb) {
     await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: "AIzaSyBkm1V_86doUEbtGGeydiiOssKH6Hgp-J0",
-        authDomain: "law4her-3ce9a.firebaseapp.com",
-        projectId: "law4her-3ce9a",
-        storageBucket: "law4her-3ce9a.appspot.com",
-        messagingSenderId: "1058685362057",
-        appId: "1:1058685362057:web:04d306b9c0d38b98b28b58",
-        measurementId: "G-VY1YYZ72P8",
+      options: FirebaseOptions(
+        apiKey: dotenv.env['API_KEY'] ?? '',
+        authDomain: dotenv.env['AUTH_DOMAIN'] ?? '',
+        projectId: dotenv.env['PROJECT_ID'] ?? '',
+        storageBucket: dotenv.env['STORAGE_BUCKET'] ?? '',
+        messagingSenderId: dotenv.env['MESSAGING_SENDER_ID'] ?? '',
+        appId: dotenv.env['APP_ID'] ?? '',
+        measurementId: dotenv.env['MEASUREMENT_ID'] ?? '',
+
       ),
     );
   } else {

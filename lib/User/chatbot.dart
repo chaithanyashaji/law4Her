@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:math';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class Chatbot extends StatefulWidget {
   const Chatbot({super.key});
@@ -30,14 +31,14 @@ class _ChatbotState extends State<Chatbot> with TickerProviderStateMixin {
 
   // Backend API URL
   // Backend API URLs
-  final String ipcApiUrl = "https://chaithanyashaji-lawapi.hf.space/chat"; // IPC
-  final String bnsApiUrl = "https://chaithanyashaji21-bnsapi.hf.space/chat"; // BNS
+  final String ipcApiUrl = dotenv.env['IPC_API_URL'] ?? ''; // IPC
+  final String bnsApiUrl = dotenv.env['BNS_API_URL'] ?? ''; // BNS
   late String apiUrl; // Current selected API URL
 
 
   // Translation API
-  final String translateApiUrl = "https://google-api31.p.rapidapi.com/gtranslate";
-  final String rapidApiKey = "2d90bd2d4amshf5efa5cbcfb2acfp106a8ejsnac5f7aa5b0ff";
+  final String translateApiUrl = dotenv.env['TRANSLATE_API_URL'] ?? '';
+  final String rapidApiKey = dotenv.env['RAPID_API_KEY'] ?? '';
 
   // Supported Languages
   String selectedLanguage = "en";

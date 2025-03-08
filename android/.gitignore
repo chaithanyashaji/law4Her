@@ -1,13 +1,37 @@
+# Flutter & Dart specific files
 gradle-wrapper.jar
 /.gradle
 /captures/
+GeneratedPluginRegistrant.java
+
+# Gradle files
 /gradlew
 /gradlew.bat
 /local.properties
-GeneratedPluginRegistrant.java
 
-# Remember to never publicly share your keystore.
-# See https://flutter.dev/to/reference-keystore
+# Environment and configuration files
+.env                   # Exclude .env file
+google-services.json   # Exclude google-services.json
+
+# Keystore files - Never share these publicly
 key.properties
 **/*.keystore
 **/*.jks
+
+# Flutter build outputs
+build/
+.android/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# IntelliJ and VSCode specific files
+.idea/
+.vscode/
+*.iml
+
+# macOS specific files
+.DS_Store
+
+# Firebase and Google Services
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
