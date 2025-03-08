@@ -21,9 +21,11 @@ Law4Her is a comprehensive legal assistance platform designed to support women i
 ### 🔹 **Splash Screen | Login | Choose User**
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/28af6a3d-aead-4c10-90de-00be58aa2bf2" width="250">
-  <img src="https://github.com/user-attachments/assets/520f1193-2f77-4082-8525-73f33bbcb3b4" width="250">
-  <img src="https://github.com/user-attachments/assets/0027f998-c5b1-490b-9209-ae0ed7d517e1" width="250">
+   <img src="https://github.com/user-attachments/assets/2476cc56-19b6-4c05-aeaf-97107719b714" width="250">
+  
+ 
+ 
+  
 </p>
 
 ---
@@ -33,7 +35,10 @@ Law4Her is a comprehensive legal assistance platform designed to support women i
 <p align="center">
   <img src="https://github.com/user-attachments/assets/0027f998-c5b1-490b-9209-ae0ed7d517e1" width="250">
   <img src="https://github.com/user-attachments/assets/520f1193-2f77-4082-8525-73f33bbcb3b4" width="250">
-  <img src="https://github.com/user-attachments/assets/9bde15ef-7298-44b0-8eb1-af0fe0bfdc91" width="250">
+  <img src="https://github.com/user-attachments/assets/336f04d1-b616-40ab-8375-768d645b56a9" width="250">
+  
+ 
+
 </p>
 
 ---
@@ -41,19 +46,20 @@ Law4Her is a comprehensive legal assistance platform designed to support women i
 ### 🔹 **Lawyer Home | Profile | Earnings**
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/336f04d1-b616-40ab-8375-768d645b56a9" width="250">
-  <img src="https://github.com/user-attachments/assets/57b2583d-acba-4858-8b63-cbdfd42a22bc" width="250">
   <img src="https://github.com/user-attachments/assets/61e96ce5-2b1a-403c-8396-be94d0a7982a" width="250">
+   <img src="https://github.com/user-attachments/assets/28af6a3d-aead-4c10-90de-00be58aa2bf2" width="250">
+  <img src="https://github.com/user-attachments/assets/57b2583d-acba-4858-8b63-cbdfd42a22bc" width="250">
+ 
 </p>
 
 ---
 
-### 🔹 **Lawyers List | IPC Chatbot | Forum**
+### 🔹 **Lawyers Consultation | IPC Chatbot | Forum**
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/b173b0ed-ddea-4460-8589-b5940ffe6bef" width="250">
   <img src="https://github.com/user-attachments/assets/68fbfe6c-0127-457d-9eda-3341cf0611ac" width="250">
-  <img src="https://github.com/user-attachments/assets/2476cc56-19b6-4c05-aeaf-97107719b714" width="250">
+  <img src="https://github.com/user-attachments/assets/9bde15ef-7298-44b0-8eb1-af0fe0bfdc91" width="250">
 </p>
 
 ---
