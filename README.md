@@ -85,11 +85,13 @@ Law4Her is a comprehensive legal assistance platform designed to support women i
 
 ---
 
-### 🔹 **Difference Between IPC and BNS| Chatting in Regional language**
+### 🔹 **Difference Between IPC and BNS| Chatting in Regional language| Emergency Contact**
 
 <p align="center">
     <img src="https://github.com/user-attachments/assets/b173b0ed-ddea-4460-8589-b5940ffe6bef" width="28%" style="margin-right: 1%;">
-   <img src="https://github.com/user-attachments/assets/a19aa51c-fda9-4617-8919-71847bd445ef" width="28%">
+   <img src="https://github.com/user-attachments/assets/a19aa51c-fda9-4617-8919-71847bd445ef" width="28%" style="margin-right: 1%;">
+     <img src="https://github.com/user-attachments/assets/eaa19079-15ec-4436-aca8-6afcecdb8c63" width="28%">
+ 
 
 </p>
 
