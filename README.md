@@ -66,7 +66,7 @@ Law4Her is a comprehensive legal assistance platform designed to support women i
 </p>
 
 ---
-### 🔹 **Lawyer Reports| Forum Reports | Lawyer's payment handlisng**
+### 🔹 **Lawyer Reports| Forum Reports | Lawyer's payment handling**
 <p align="center">
       <img src="https://github.com/user-attachments/assets/7e8c6c13-f32b-4595-8355-bebdd0ef922a" width="28%" style="margin-right: 1%;">
    <img src="https://github.com/user-attachments/assets/c6df32b0-5189-4ae2-9d70-6736740a2f06" width="28%" style="margin-right: 1%;">
