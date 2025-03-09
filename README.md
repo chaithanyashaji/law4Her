@@ -58,6 +58,23 @@ Law4Her is a comprehensive legal assistance platform designed to support women i
 
 ---
 
+### 🔹 **Admin Screens**
+<p align="center">
+   <img src="https://github.com/user-attachments/assets/7e8c6c13-f32b-4595-8355-bebdd0ef922a" width="28%" style="margin-right: 1%;">
+   <img src="https://github.com/user-attachments/assets/64607195-1cae-4c5b-9d3c-4bdd6756965c" width="28%" style="margin-right: 1%;">
+   <img src="https://github.com/user-attachments/assets/03917c55-68bb-4e1e-9aae-2735121620a6" width="28%">
+</p>
+
+---
+### 🔹 **Admin Screens**
+<p align="center">
+   <img src="https://github.com/user-attachments/assets/c6df32b0-5189-4ae2-9d70-6736740a2f06" width="28%" style="margin-right: 1%;">
+   <img src="https://github.com/user-attachments/assets/53a7c57d-22f4-45b1-bc1a-f3b35040c23c" width="28%" style="margin-right: 1%;">
+   <img src="https://github.com/user-attachments/assets/2264d05a-07b2-4bfa-b71e-2b5829b82336" width="28%">
+</p>
+
+---
+
 ### 🔹 **Lawyers Consultation | IPC Chatbot | Forum**
 
 <p align="center">
