@@ -116,7 +116,7 @@ Law4Her is a comprehensive legal assistance platform designed to support women i
 
 ## 🔗 **Project Links**
 - **Chatbot Demo:** [Law4Her Chatbot](https://huggingface.co/spaces/chaithanyashaji/lawforher)
-- **BNS-Law4Her Dataset:** [BNS-Law4Her](https://huggingface.co/spaces/chaithanyashaji/BNS-Law4her)
+- **BNS-Law4Her Demo:** [BNS-Law4Her](https://huggingface.co/spaces/chaithanyashaji/BNS-Law4her)
 
 ---
 
