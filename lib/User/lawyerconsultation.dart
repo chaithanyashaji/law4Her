@@ -129,7 +129,7 @@ class _LawyerConsultationState extends State<LawyerConsultation> {
         'lawyerId': lawyerId,
         'lawyerName': lawyerName,
         'lawyerEmail': lawyerEmail,
-        'status': 'pending',
+        'status': 'Pending',
         'timestamp': FieldValue.serverTimestamp(),
       });
 
@@ -165,11 +165,11 @@ class _LawyerConsultationState extends State<LawyerConsultation> {
     }
 
     try {
-      await FirebaseFirestore.instance.collection('reports').add({
+      await FirebaseFirestore.instance.collection('lawyerreports').add({
         'reporterId': currentUser.uid,
         'lawyerId': lawyerId,
         'reason': reason,
-        'status': 'pending', // Default status
+        'status': 'Pending', // Default status
         'timestamp': FieldValue.serverTimestamp(),
       });
 
@@ -735,7 +735,7 @@ class _LawyerConsultationState extends State<LawyerConsultation> {
           ),
         );
 
-      case 'pending':
+      case 'Pending':
         return SizedBox(
           height: 28,
           child: ElevatedButton(

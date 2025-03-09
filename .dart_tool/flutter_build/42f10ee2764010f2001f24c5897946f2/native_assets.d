@@ -1,0 +1,1 @@
+ D:\\law4her1\\law4Her\\.dart_tool\\flutter_build\\42f10ee2764010f2001f24c5897946f2\\native_assets.yaml: 
