@@ -24,6 +24,8 @@ build/
 ios/Flutter/Flutter.framework
 ios/Flutter/Flutter.podspec
 
+.flutter-plugins
+.flutter-plugins-dependencies
 # IntelliJ and VSCode specific files
 .idea/
 .vscode/
