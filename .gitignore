@@ -35,3 +35,4 @@ ios/Flutter/Flutter.podspec
 # Firebase and Google Services
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
+.env
