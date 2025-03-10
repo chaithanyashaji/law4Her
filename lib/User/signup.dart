@@ -379,10 +379,11 @@ class _UserSignupState extends State<UserSignup> with SingleTickerProviderStateM
     String password = _passwordController.text.trim();
     String confirmPassword = _conPasswordController.text.trim();
 
-    List<String> weakPasswords = [
-      "123456", "12345678", "password", "qwerty", "123456789", "abc123",
-      "111111", "123123", "1234567", "iloveyou", "000000", "qwerty123"
-    ];
+    // Regular expression to enforce password rules:
+    // - At least 8 characters
+    // - At least one uppercase letter
+    // - At least one special character
+    RegExp passwordRegExp = RegExp(r'^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$');
 
     if (name.isEmpty || email.isEmpty || mobileNumber.isEmpty || place.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       setState(() {
@@ -391,16 +392,9 @@ class _UserSignupState extends State<UserSignup> with SingleTickerProviderStateM
       return;
     }
 
-    if (password.length < 8) {
+    if (!passwordRegExp.hasMatch(password)) {
       setState(() {
-        _errorText = 'Password must be at least 8 characters long';
-      });
-      return;
-    }
-
-    if (weakPasswords.contains(password)) {
-      setState(() {
-        _errorText = 'Use a stronger password';
+        _errorText = 'Password must be at least 8 characters long, include one uppercase letter, and one special character';
       });
       return;
     }
@@ -416,5 +410,6 @@ class _UserSignupState extends State<UserSignup> with SingleTickerProviderStateM
       _errorText = '';
     });
   }
+
 
 }

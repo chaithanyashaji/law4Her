@@ -576,19 +576,11 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
       return;
     }
 
-    // Weak password validation
-    List<String> weakPasswords = [
-      "123456", "12345678", "password", "qwerty", "123456789", "abc123",
-      "111111", "123123", "1234567", "iloveyou", "000000", "qwerty123"
-    ];
+    // Strong password validation
+    RegExp passwordRegExp = RegExp(r'^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$');
 
-    if (_passwordController.text.length < 8) {
-      setState(() => _errorText = 'Password must be at least 8 characters long.');
-      return;
-    }
-
-    if (weakPasswords.contains(_passwordController.text.trim())) {
-      setState(() => _errorText = 'Use a stronger password.');
+    if (!passwordRegExp.hasMatch(_passwordController.text.trim())) {
+      setState(() => _errorText = 'Password must be at least 8 characters long, include one uppercase letter, and one special character.');
       return;
     }
 
@@ -601,10 +593,8 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
       );
 
       final userId = userCredential.user!.uid;
-      final idProofUrl =
-      await _uploadFile(_compressedIdProofBytes!, 'lawyer_id_proofs/$userId.jpg');
-      final profilePhotoUrl =
-      await _uploadFile(_compressedProfilePhotoBytes!, 'lawyer_profile_photos/$userId.jpg');
+      final idProofUrl = await _uploadFile(_compressedIdProofBytes!, 'lawyer_id_proofs/$userId.jpg');
+      final profilePhotoUrl = await _uploadFile(_compressedProfilePhotoBytes!, 'lawyer_profile_photos/$userId.jpg');
 
       await FirebaseFirestore.instance.collection('lawyer').doc(userId).set({
         'name': _nameController.text.trim(),
@@ -647,6 +637,7 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
       return;
     }
   }
+
 
 
 

@@ -32,8 +32,8 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
         if (doc.exists) {
           setState(() {
             lawyerData = doc.data();
-            lawyerData!['serviceType'] = doc.data()?['serviceType'] ?? 'Free Service';
-            lawyerData!['rate'] = doc.data()?['rate'] ?? 0;
+            serviceType = lawyerData?['serviceType'] ?? 'Free Service'; // Default to Free Service
+            rateController.text = lawyerData?['rate']?.toString() ?? '0'; // Default to 0
           });
         }
       } catch (e) {
