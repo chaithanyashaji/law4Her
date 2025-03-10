@@ -153,7 +153,7 @@ class _ChatWithLawyerState extends State<ChatWithLawyer> {
   void _startTimeoutLogic() {
     if (_chatEnded) return;
 
-    _timeoutTimer = Timer(const Duration(minutes: 10), () async {
+    _timeoutTimer = Timer(const Duration(minutes: 2), () async {
       if (_chatEnded) return;
 
       final chatSessionRef = FirebaseFirestore.instance.collection('chatSessions').doc(chatId);
