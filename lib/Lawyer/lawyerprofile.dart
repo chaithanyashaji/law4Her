@@ -14,6 +14,9 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   Map<String, dynamic>? lawyerData;
+  String serviceType = 'Free Service';
+  TextEditingController rateController = TextEditingController();
+
 
   @override
   void initState() {
@@ -29,6 +32,8 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
         if (doc.exists) {
           setState(() {
             lawyerData = doc.data();
+            lawyerData!['serviceType'] = doc.data()?['serviceType'] ?? 'Free Service';
+            lawyerData!['rate'] = doc.data()?['rate'] ?? 0;
           });
         }
       } catch (e) {
@@ -36,6 +41,8 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
       }
     }
   }
+
+
 
   Widget _buildInfoCard(IconData icon, String title, String value) {
     return Container(
@@ -168,8 +175,144 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                       lawyerData!['specialization'] ?? 'N/A'),
                   const SizedBox(height: 16),
                   _buildInfoCard(Icons.location_city, 'City',
-                      lawyerData!['city'] ?? 'N/A'),
+                      lawyerData!['place'] ?? 'N/A'),
                   const SizedBox(height: 16),
+
+// Free/Paid Service Dropdown
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.business_center, color: const Color(0xFF416d6d)), // Briefcase Icon
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Service Type',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: serviceType,
+                                  items: ['Free Service', 'Paid Service']
+                                      .map((String value) => DropdownMenuItem(
+                                    value: value,
+                                    child: Text(
+                                      value,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF416d6d),
+                                      ),
+                                    ),
+                                  ))
+                                      .toList(),
+                                  onChanged: (newValue) async {
+                                    setState(() {
+                                      serviceType = newValue!;
+                                      if (serviceType == 'Free Service') {
+                                        rateController.text = '0'; // Reset rate if Free Service
+                                      }
+                                    });
+
+                                    // Auto-update Firestore when the value changes
+                                    final user = _auth.currentUser;
+                                    if (user != null) {
+                                      try {
+                                        await _firestore.collection('lawyer').doc(user.uid).update({
+                                          'serviceType': serviceType,
+                                          'rate': serviceType == 'Paid Service' ? int.parse(rateController.text) : 0,
+                                        });
+                                      } catch (e) {
+                                        print("Error updating service type: $e");
+                                      }
+                                    }
+                                  },
+                                  icon: Icon(Icons.arrow_drop_down, color: Color(0xFF416d6d)), // Dropdown arrow
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+
+
+                  const SizedBox(height: 16),
+
+// Rate Field (Only Visible if Paid Service)
+                  if (serviceType == 'Paid Service')
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.monetization_on, color: const Color(0xFF416d6d)), // Money Icon
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Rate',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${rateController.text} INR',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF416d6d),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.edit, color: Color(0xFF416d6d)), // Edit button inside card
+                            onPressed: () => _showEditRateDialog(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  SizedBox(height: 16,),
+
+
+
+
 
                   // Earnings Info Card
                   GestureDetector(
@@ -218,4 +361,53 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
       ),
     );
   }
+  void _showEditRateDialog() {
+    TextEditingController newRateController = TextEditingController(text: rateController.text);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Edit Rate"),
+          content: TextField(
+            controller: newRateController,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              hintText: "Enter new rate",
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context), // Close Dialog
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () async {
+                final user = _auth.currentUser;
+                if (user != null) {
+                  try {
+                    int newRate = int.tryParse(newRateController.text) ?? 0;
+                    await _firestore.collection('lawyer').doc(user.uid).update({
+                      'rate': newRate,
+                    });
+
+                    setState(() {
+                      rateController.text = newRate.toString(); // Update UI
+                    });
+
+                    Navigator.pop(context); // Close Dialog
+                  } catch (e) {
+                    print("Error updating rate: $e");
+                  }
+                }
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 }

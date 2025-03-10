@@ -23,7 +23,7 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
   final _mobileNumberController = TextEditingController();
   final _passwordController = TextEditingController();
   final _conPasswordController = TextEditingController();
-  final _barIdController = TextEditingController();
+  final _enrollmentnumberController = TextEditingController();
   final _specializationController = TextEditingController();
   final _placeController = TextEditingController();
   final _experienceController = TextEditingController(); // New Controller for experience
@@ -63,7 +63,7 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
     _mobileNumberController.dispose();
     _passwordController.dispose();
     _conPasswordController.dispose();
-    _barIdController.dispose();
+    _enrollmentnumberController.dispose();
     _specializationController.dispose();
     _placeController.dispose();
     _experienceController.dispose();
@@ -360,10 +360,10 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
                           ),
                           const Gap(20),
                           _buildTextField(
-                            controller: _barIdController,
-                            label: "Bar ID",
+                            controller: _enrollmentnumberController,
+                            label: "Enrollment Number",
                             icon: Icons.badge_outlined,
-                            validator: (value) => value?.isEmpty ?? true ? "Please enter your Bar ID" : null,
+                            validator: (value) => value?.isEmpty ?? true ? "Please enter your Enrollment Number" : null,
                           ),
                           const Gap(20),
                           _buildTextField(
@@ -576,6 +576,22 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
       return;
     }
 
+    // Weak password validation
+    List<String> weakPasswords = [
+      "123456", "12345678", "password", "qwerty", "123456789", "abc123",
+      "111111", "123123", "1234567", "iloveyou", "000000", "qwerty123"
+    ];
+
+    if (_passwordController.text.length < 8) {
+      setState(() => _errorText = 'Password must be at least 8 characters long.');
+      return;
+    }
+
+    if (weakPasswords.contains(_passwordController.text.trim())) {
+      setState(() => _errorText = 'Use a stronger password.');
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -587,14 +603,14 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
       final userId = userCredential.user!.uid;
       final idProofUrl =
       await _uploadFile(_compressedIdProofBytes!, 'lawyer_id_proofs/$userId.jpg');
-      final profilePhotoUrl = await _uploadFile(
-          _compressedProfilePhotoBytes!, 'lawyer_profile_photos/$userId.jpg');
+      final profilePhotoUrl =
+      await _uploadFile(_compressedProfilePhotoBytes!, 'lawyer_profile_photos/$userId.jpg');
 
       await FirebaseFirestore.instance.collection('lawyer').doc(userId).set({
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
         'mobilenumber': _mobileNumberController.text.trim(),
-        'barid': _barIdController.text.trim(),
+        'enrollmentnumber': _enrollmentnumberController.text.trim(),
         'specialization': _specializationController.text.trim(),
         'place': _placeController.text.trim(),
         'experience': int.parse(_experienceController.text.trim()),
@@ -607,10 +623,9 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
         'serviceType': _selectedServiceType,
         'availability': false, // Initialize availability as false
         'earnings': 0, // Initialize earnings to 0
-        if (_selectedServiceType == 'Paid Service') 'rate': int.parse(_rateController.text.trim()), // Save rate for Paid Service
+        if (_selectedServiceType == 'Paid Service')
+          'rate': int.parse(_rateController.text.trim()), // Save rate for Paid Service
       });
-
-
 
       _showVerificationDialog();
     } on FirebaseAuthException catch (e) {
@@ -626,11 +641,13 @@ class _LawyerSignupState extends State<LawyerSignup> with SingleTickerProviderSt
     } finally {
       setState(() => _isLoading = false);
     }
+
     if (_selectedServiceType == 'Paid Service' && (_rateController.text.isEmpty || int.tryParse(_rateController.text) == null)) {
       setState(() => _errorText = 'Please enter a valid rate amount for Paid Service.');
       return;
     }
   }
+
 
 
 

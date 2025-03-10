@@ -379,10 +379,28 @@ class _UserSignupState extends State<UserSignup> with SingleTickerProviderStateM
     String password = _passwordController.text.trim();
     String confirmPassword = _conPasswordController.text.trim();
 
-    if (name.isEmpty || email.isEmpty || mobileNumber.isEmpty || place.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    List<String> weakPasswords = [
+      "123456", "12345678", "password", "qwerty", "123456789", "abc123",
+      "111111", "123123", "1234567", "iloveyou", "000000", "qwerty123"
+    ];
 
+    if (name.isEmpty || email.isEmpty || mobileNumber.isEmpty || place.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       setState(() {
         _errorText = 'All fields are required';
+      });
+      return;
+    }
+
+    if (password.length < 8) {
+      setState(() {
+        _errorText = 'Password must be at least 8 characters long';
+      });
+      return;
+    }
+
+    if (weakPasswords.contains(password)) {
+      setState(() {
+        _errorText = 'Use a stronger password';
       });
       return;
     }
@@ -398,4 +416,5 @@ class _UserSignupState extends State<UserSignup> with SingleTickerProviderStateM
       _errorText = '';
     });
   }
+
 }

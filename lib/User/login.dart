@@ -518,8 +518,10 @@ String _handleFirebaseAuthError(FirebaseAuthException e) {
       return 'No account found with this email.';
     case 'invalid-email':
       return 'Invalid email format.';
+    case 'invalid-credential': // Handles incorrect credentials
+      return 'Incorrect email or password. Please try again.';
     default:
-      return e.message ?? 'Login failed. Please try again.';
+      return 'Login failed. Please check your credentials and try again.';
   }
 }
 

@@ -139,7 +139,7 @@ class _VerifyLawyerState extends State<VerifyLawyer> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Bar ID: ${lawyerData['barid'] ?? 'N/A'}',
+            'Enrollment Number: ${lawyerData['enrollmentnumber'] ?? 'N/A'}',
             style: TextStyle(fontSize: 14, color: primaryColor),
           ),
           const SizedBox(height: 8),
@@ -188,8 +188,8 @@ class _VerifyLawyerState extends State<VerifyLawyer> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildStatusButton(context, lawyerId, 'Approved'),
-              _buildStatusButton(context, lawyerId, 'Rejected'),
+              _buildStatusButton(context, lawyerId, 'Approve'),
+              _buildStatusButton(context, lawyerId, 'Reject'),
             ],
           ),
         ],
@@ -206,12 +206,17 @@ class _VerifyLawyerState extends State<VerifyLawyer> {
         }
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: status == 'Approved' ? primaryColor : secondaryColor,
+        backgroundColor: status == 'Approve'
+            ? const Color(0xff416d6d) // Greenish color for Approved
+            : status == 'Reject'
+            ? Colors.red // Red for Rejected
+            : Colors.grey, // Default color for other statuses
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
       ),
+
       child: Text(
         status,
         style: TextStyle(color: Colors.white),
