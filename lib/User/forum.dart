@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+
 
 class ForumPage extends StatefulWidget {
   @override
@@ -15,6 +17,15 @@ class _ForumPageState extends State<ForumPage> {
   final Color primaryColor = const Color(0xFF416d6d);
   final Color secondaryColor = const Color(0xFF608e8e);
   final Color backgroundColor = const Color(0xFFc5d0d3);
+  TextEditingController _searchController = TextEditingController();
+  String searchQuery = "";
+
+
+  void _filterPosts() {
+    setState(() {
+      searchQuery = _searchController.text.toLowerCase();
+    });
+  }
 
 
   Future<void> _sendReport(String postId, String reportedUserId,
@@ -104,6 +115,20 @@ class _ForumPageState extends State<ForumPage> {
     }
   }
 
+  String formatDateTime(DateTime dateTime) {
+    DateTime now = DateTime.now();
+    Duration difference = now.difference(dateTime);
+
+    if (difference.inDays == 0) {
+      return DateFormat.jm().format(dateTime); // Show only time (e.g., 2:30 PM)
+    } else if (difference.inDays == 1) {
+      return "Yesterday"; // Show 'Yesterday'
+    } else if (difference.inDays < 7) {
+      return DateFormat.E().format(dateTime); // Show day name (e.g., Mon, Tue)
+    } else {
+      return DateFormat('dd/MM/yyyy').format(dateTime); // Show full date (e.g., 12/03/2024)
+    }
+  }
 
 
 
@@ -145,9 +170,32 @@ class _ForumPageState extends State<ForumPage> {
       ),
       backgroundColor: backgroundColor,
       body: Column(
-        children: [
+        children: [Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: TextField(
+            controller: _searchController,
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value.toLowerCase();
+              });
+            },
+            decoration: InputDecoration(
+              hintText: "Search posts...",
+              prefixIcon: Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+        ),
           _buildPostComposer(),
+          // Expanded Posts List
           Expanded(child: _buildPostsList()),
+
+
         ],
       ),
     );
@@ -256,9 +304,17 @@ class _ForumPageState extends State<ForumPage> {
           );
         }
 
+        // Get all posts
         final posts = snapshot.data!.docs;
 
-        if (posts.isEmpty) {
+        // Apply search filter
+        final filteredPosts = posts.where((post) {
+          final postText = post['content'].toString().toLowerCase();
+          return postText.contains(searchQuery);
+        }).toList();
+
+        // If no results after filtering
+        if (filteredPosts.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -270,7 +326,9 @@ class _ForumPageState extends State<ForumPage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  "No posts yet. Start the conversation!",
+                  searchQuery.isEmpty
+                      ? "No posts yet. Start the conversation!"
+                      : "No matching posts found.",
                   style: TextStyle(
                     color: primaryColor,
                     fontSize: 16,
@@ -284,22 +342,37 @@ class _ForumPageState extends State<ForumPage> {
 
         return ListView.builder(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          itemCount: posts.length,
-          itemBuilder: (context, index) => _buildForumPost(posts[index]),
+          itemCount: filteredPosts.length,
+          itemBuilder: (context, index) => _buildForumPost(filteredPosts[index]),
         );
       },
     );
   }
 
+
   Widget _buildForumPost(DocumentSnapshot post) {
     final data = post.data() as Map<String, dynamic>;
-    final comments = List<Map<String, dynamic>>.from(data['comments'] ?? []);
-    final currentUserId = _auth.currentUser!.uid;
-    final thumbsUp = List<String>.from(data['thumbsUp'] ?? []);
-    final thumbsDown = List<String>.from(data['thumbsDown'] ?? []);
-    final isThumbsUp = thumbsUp.contains(currentUserId);
-    final isThumbsDown = thumbsDown.contains(currentUserId);
 
+    // Fetch timestamp
+    final Timestamp? timestamp = data['timestamp'];
+    String formattedTime = 'Time not available';
+
+    if (timestamp != null) {
+      DateTime postDate = timestamp.toDate();
+      DateTime now = DateTime.now();
+
+      if (postDate.year == now.year &&
+          postDate.month == now.month &&
+          postDate.day == now.day) {
+        formattedTime = DateFormat.jm().format(postDate); // "2:30 PM"
+      } else if (postDate.year == now.year) {
+        formattedTime = DateFormat('MMM d').format(postDate); // "Apr 1"
+      } else {
+        formattedTime = DateFormat('yMMM').format(postDate); // "Apr 2024"
+      }
+    }
+
+    print("Post ID: ${post.id}, Timestamp: $timestamp, Formatted Time: $formattedTime"); // Debugging log
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -312,7 +385,12 @@ class _ForumPageState extends State<ForumPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 16),
+                // Display timestamp here
+                Text(
+                  formattedTime,
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                const SizedBox(height: 4),
                 Text(
                   data['content'] ?? '',
                   style: TextStyle(
@@ -321,69 +399,6 @@ class _ForumPageState extends State<ForumPage> {
                     height: 1.5,
                     letterSpacing: 0.3,
                   ),
-                ),
-              ],
-            ),
-          ),
-          // Line partition between content and action buttons
-          Divider(
-            thickness: 1,
-            height: 1,
-            color: secondaryColor.withOpacity(0.4),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: backgroundColor.withOpacity(0.1),
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(16),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildActionButton(
-                  onTap: () => _toggleThumbs(post.id, thumbsUp, thumbsDown, currentUserId, true),
-                  icon: isThumbsUp ? Icons.thumb_up_rounded : Icons.thumb_up_outlined,
-                  count: thumbsUp.length,
-                  active: isThumbsUp,
-                ),
-                _buildActionButton(
-                  onTap: () => _toggleThumbs(post.id, thumbsUp, thumbsDown, currentUserId, false),
-                  icon: isThumbsDown ? Icons.thumb_down_rounded : Icons.thumb_down_outlined,
-                  count: thumbsDown.length,
-                  active: isThumbsDown,
-                ),
-
-
-                _buildActionButton(
-                  onTap: () => _showCommentsPage(post.id),
-                  icon: Icons.chat_bubble_outline_rounded,
-                  count: comments.length,
-                  active: false,
-                ),
-                if (data['userId'] == currentUserId)
-                  IconButton(
-                    icon: Icon(
-                      Icons.delete_outline_rounded,
-                      color: secondaryColor.withOpacity(0.7),
-                    ),
-                    onPressed: () => _confirmDeletePost(post.id),
-                  ),
-                // Report button
-                IconButton(
-                  icon: Icon(
-                    Icons.report_outlined,
-                    color: secondaryColor.withOpacity(0.7),
-                  ),
-                  onPressed: () =>
-                      _showReportDialog(
-                        post.id, // The ID of the forum post being reported
-                        data['userId'],
-                        // The ID of the user whose post is being reported
-                        data['userName'] ??
-                            'User', // The name of the user whose post is being reported // The name of the user whose post is being reported
-                      ),
                 ),
               ],
             ),
