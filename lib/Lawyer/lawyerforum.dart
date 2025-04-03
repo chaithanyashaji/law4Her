@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+
 
 class LawyerForumPage extends StatefulWidget {
   @override
@@ -14,6 +16,9 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
   final Color primaryColor = const Color(0xFF416d6d); // Primary color
   final Color secondaryColor = const Color(0xFF608e8e); // Secondary color
   final Color backgroundColor = const Color(0xFFc5d0d3); // Background color
+  final TextEditingController _searchController = TextEditingController();
+  String searchQuery = "";
+
 
 
 
@@ -41,6 +46,28 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
       backgroundColor: backgroundColor,
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value.toLowerCase();
+                });
+              },
+              decoration: InputDecoration(
+                hintText: "Search posts...",
+                prefixIcon: Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -56,23 +83,32 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
 
                 final posts = snapshot.data!.docs;
 
-                if (posts.isEmpty) {
-                  return const Center(
+// 🔍 Apply search filter
+                final filteredPosts = posts.where((post) {
+                  final content = (post['content'] ?? '').toString().toLowerCase();
+                  return content.contains(searchQuery);
+                }).toList();
+
+// 🛑 Handle no results
+                if (filteredPosts.isEmpty) {
+                  return Center(
                     child: Text(
-                      "No posts available.",
-                      style: TextStyle(fontSize: 16, color: Colors.white),
+                      searchQuery.isEmpty ? "No posts available." : "No matching posts found.",
+                      style: const TextStyle(fontSize: 16, color: Colors.white),
                     ),
                   );
                 }
 
+// ✅ Display filtered posts
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  itemCount: posts.length,
+                  itemCount: filteredPosts.length,
                   itemBuilder: (context, index) {
-                    final post = posts[index];
+                    final post = filteredPosts[index];
                     return _buildForumPost(post);
                   },
                 );
+
               },
             ),
           ),
@@ -83,10 +119,29 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
 
   Widget _buildForumPost(DocumentSnapshot post) {
     final data = post.data() as Map<String, dynamic>;
+    final Timestamp? timestamp = data['timestamp'];
+    String formattedTime = 'Time not available';
+
+    if (timestamp != null) {
+      DateTime postDate = timestamp.toDate();
+      DateTime now = DateTime.now();
+
+      if (postDate.year == now.year &&
+          postDate.month == now.month &&
+          postDate.day == now.day) {
+        formattedTime = DateFormat.jm().format(postDate); // e.g. 2:30 PM
+      } else if (postDate.year == now.year) {
+        formattedTime = DateFormat('MMM d').format(postDate); // e.g. Apr 3
+      } else {
+        formattedTime = DateFormat('yMMM').format(postDate); // e.g. Apr 2024
+      }
+    }
+
     final comments = List<Map<String, dynamic>>.from(data['comments'] ?? []);
     final likes = List<String>.from(data['likes'] ?? []);
     final dislikes = List<String>.from(data['dislikes'] ?? []);
     final currentUserId = _auth.currentUser!.uid;
+
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -105,6 +160,12 @@ class _LawyerForumPageState extends State<LawyerForumPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            formattedTime,
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+
           Text(
             data['content'] ?? '',
             style: const TextStyle(
